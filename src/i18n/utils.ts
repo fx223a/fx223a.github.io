@@ -35,3 +35,36 @@ export function useTranslations(lang: string = defaultLocale) {
     return dict[key] ?? dictionaries[defaultLocale][key] ?? key;
   };
 }
+
+// ============================================================
+// 参数值的单位本地化
+// products.json 里的数值型参数值用拉丁单位缩写写死（hp / kW / cc / rpm / kg / mm …）。
+// 俄语买家习惯西里尔单位（л.с. / кВт / см³ / об/мин / кг / мм），
+// 这里在“显示时”做替换——数据文件保持一份，不同语言各自显示各自的习惯写法。
+// 英语/中文/波斯语的行业习惯就是拉丁缩写，原样返回。
+// ============================================================
+const ruUnitMap: [RegExp, string][] = [
+  //（顺序有讲究：先长后短，避免 kW 里的 W 被单独的 W 规则先吃掉）
+  [/\bhp\b/g, 'л.с.'],
+  [/\bkW\b/g, 'кВт'],
+  [/\bcc\b/g, 'см³'],
+  [/\brpm\b/g, 'об/мин'],
+  [/\bkg\b/g, 'кг'],
+  [/\bmm\b/g, 'мм'],
+  [/\bL\/h\b/g, 'л/ч'],
+  [/\bV DC\b/g, 'В (пост. ток)'],
+  [/\bV\b/g, 'В'],
+  [/\bW\b/g, 'Вт'],
+  [/\bg\b/g, 'г'],
+];
+
+// 把一条参数值按语言本地化单位。俄语替换，其它语言原样返回。
+// 用法：localizeSpecValue('11.22 hp / 8.25 kW', 'ru') → '11.22 л.с. / 8.25 кВт'
+export function localizeSpecValue(value: string, lang: string): string {
+  if (lang !== 'ru') return value;
+  let out = value;
+  for (const [pattern, replacement] of ruUnitMap) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
+}

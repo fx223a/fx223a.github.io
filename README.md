@@ -1,43 +1,32 @@
-# Astro Starter Kit: Minimal
+# engine-site — 发动机产品展示 + 询价网站
 
-```sh
-npm create astro@latest -- --template minimal
-```
+二冲程航空发动机（120–730cc，无人机/轻型飞行器用）的多语言展示网站，含询价表单，不接支付。
+目标市场：俄罗斯（默认语言）、乌克兰、伊朗。
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 技术栈
 
-## 🚀 Project Structure
+- [Astro](https://docs.astro.build) 静态站（构建产物为纯静态文件）
+- 纯 CSS（无 Tailwind），全程使用逻辑属性以支持 RTL（波斯语预留）
+- 产品数据：`src/data/products.json`（7 个型号），无数据库、无自建后端
+- 多语言：ru（默认）/ en / zh 已启用，fa（波斯语，RTL）翻译已完成待启用
 
-Inside of your Astro project, you'll see the following folders and files:
+## 常用命令
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+| 命令 | 作用 |
+|---|---|
+| `npm run dev` | 启动开发服务器（`astro dev --background` 可后台运行） |
+| `npm run build` | 生产构建到 `dist/` |
+| `npm run preview` | 本地预览构建产物 |
+| `npm run check:placeholders` | **部署前自检**：全站搜「待填」/Placeholder，非 0 即拦截 |
+| `npm run deploy:check` | 自检 + 构建一条龙（上线前必须全绿） |
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## 重要文件
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+- `CLAUDE.md`（→ `AGENTS.md`）— 项目规则与进度，含**上线红线**
+- `CONTENT-TODO.md` — 所有待客户提供的真实内容清单
+- `src/i18n/config.ts` — 语言总开关（启用 fa 只需把 `'fa'` 加入 `locales`）
+- `src/config/site.ts` — 询价接口地址（部署接口后填入）
 
-Any static assets, like images, can be placed in the `public/` directory.
+## ⛔ 上线红线
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+占位内容未填完禁止部署。`npm run check:placeholders` 必须通过才能上线，详见 `CLAUDE.md`。

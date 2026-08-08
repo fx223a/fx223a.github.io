@@ -1,11 +1,15 @@
 ---
 // ============================================================
 // 页面骨架布局(BaseLayout)
-// 所有页面都会“套”在这个骨架里，统一拥有：顶部导航、语言切换、页脚。
+// 所有页面都会“套”在这个骨架里，统一拥有：SEO 头部、顶部导航、语言切换、页脚。
 // ★ RTL 关键：这里给 <html> 设置了 lang 和 dir，
 //   当语言是波斯语(fa)时 dir 会自动变成 "rtl"，整页从右到左镜像。
+// ★ SEO 关键：canonical / hreflang / Open Graph 需要“完整网址”，
+//   它们依赖 astro.config.mjs 里的 site 配置（域名）。
+//   域名还没定之前 site 为空，这些标签会自动省略；
+//   将来在 astro.config.mjs 填上 site 后，无需改这里，它们会自动全部生效。
 // ============================================================
-import { dir } from '../i18n/config';
+import { dir, locales, defaultLocale } from '../i18n/config';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 import LanguageSwitcher from '../components/LanguageSwitcher.astro';
 import Placeholder from '../components/Placeholder.astro';
@@ -15,11 +19,25 @@ import '../styles/global.css';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-// 页面标题：由具体页面通过 <BaseLayout title="..."> 传进来（可不传）
+// 页面标题/描述：由具体页面通过 <BaseLayout title="..." description="..."> 传进来（都可不传）
 interface Props {
   title?: string;
+  description?: string;
 }
-const { title } = Astro.props;
+const { title, description } = Astro.props;
+
+// meta description：页面没传就用首页副标题兜底（真实产品文案，非占位）
+const metaDescription = description ?? t('home_hero_subtitle');
+
+// 当前路径去掉语言前缀后的“页面路径”，用来生成各语言版本的互链（hreflang）。
+// 例：/en/products/ → 'products/'；首页 → ''
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+pathSegments.shift(); // 去掉语言段
+const pagePath = pathSegments.length ? pathSegments.join('/') + '/' : '';
+
+// site 已配置（域名已定）时才生成绝对网址；未配置时为 null，相关标签自动省略
+const siteOrigin = Astro.site ? Astro.site.origin : null;
+const canonicalUrl = siteOrigin ? `${siteOrigin}/${lang}/${pagePath}` : null;
 ---
 <!doctype html>
 <html lang={lang} dir={dir(lang)}>
@@ -27,19 +45,48 @@ const { title } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title ? `${title} · ` : ''}{t('site_name')}</title>
+    <meta name="description" content={metaDescription} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <meta name="theme-color" content="#b91c1c" />
+
+    {/* ===== 以下依赖域名（astro.config.mjs 的 site），未配置时自动省略 ===== */}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {siteOrigin && (
+      <>
+        {/* hreflang 互链：告诉 Google 各语言版本是“同一页面的不同语言”，避免被当成重复内容。
+            x-default 指向默认语言（俄语）版本。 */}
+        {locales.map((loc) => (
+          <link rel="alternate" hreflang={loc} href={`${siteOrigin}/${loc}/${pagePath}`} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={`${siteOrigin}/${defaultLocale}/${pagePath}`} />
+
+        {/* Open Graph：决定分享到 Telegram / WhatsApp 时的预览卡片 */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content={t('site_name')} />
+        <meta property="og:title" content={title ? `${title} · ${t('site_name')}` : t('site_name')} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:locale" content={lang} />
+      </>
+    )}
   </head>
   <body>
+    <!-- 跳到主内容：键盘/读屏用户按 Tab 的第一个焦点，可直接跳过页眉 -->
+    <a class="skip-link" href="#main">{t('skip_to_content')}</a>
+
     <header class="site-header">
       <a class="brand" href={`/${lang}/`}>{t('site_name')}</a>
-      <nav class="nav">
-        <a href={`/${lang}/`}>{t('nav_home')}</a>
-        <a href={`/${lang}/products/`}>{t('nav_products')}</a>
-        <a href={`/${lang}/inquiry/`}>{t('nav_inquiry')}</a>
+      <!-- 主导航：aria-current 标记当前所在页面（配合 global.css 高亮） -->
+      <nav class="nav" aria-label={t('nav_main_label')}>
+        <a href={`/${lang}/`} aria-current={pagePath === '' ? 'page' : undefined}>{t('nav_home')}</a>
+        <a href={`/${lang}/products/`} aria-current={pagePath.startsWith('products') ? 'page' : undefined}>{t('nav_products')}</a>
+        <a href={`/${lang}/inquiry/`} aria-current={pagePath.startsWith('inquiry') ? 'page' : undefined}>{t('nav_inquiry')}</a>
       </nav>
       <LanguageSwitcher />
     </header>
 
-    <main class="site-main">
+    <main class="site-main" id="main">
       <slot />
     </main>
 
@@ -51,8 +98,9 @@ const { title } = Astro.props;
         <Placeholder note="电话 / WhatsApp（带国家区号），CONTENT-TODO B2" />
         <Placeholder note="业务邮箱，CONTENT-TODO B3" />
         <Placeholder note="即时通讯 WhatsApp / 微信 / Telegram，CONTENT-TODO B4" />
+        <Placeholder note="工作时间 / 时区（可选），CONTENT-TODO B5" />
       </div>
-      <p class="footer-copy">© {t('site_name')} — {t('footer_rights')}</p>
+      <p class="footer-copy">© {t('site_name')} — {t('site_tagline')} — {t('footer_rights')}</p>
     </footer>
   </body>
 </html>

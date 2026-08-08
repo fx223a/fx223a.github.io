@@ -8,7 +8,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Placeholder from '../../components/Placeholder.astro';
 import { locales } from '../../i18n/config';
-import { useTranslations } from '../../i18n/utils';
+import { useTranslations, localizeSpecValue } from '../../i18n/utils';
 import products from '../../data/products.json';
 
 export function getStaticPaths() {
@@ -25,10 +25,10 @@ const featured = featuredIds
   .map((id) => products.find((p) => p.id === id))
   .filter(Boolean) as typeof products;
 
-// 小帮手：按 key 取某型号的参数值
+// 小帮手：按 key 取某型号的参数值（数值经单位本地化，俄语显示 л.с./см³ 等）
 function getSpec(product: { specs: { key: string; value: string }[] }, key: string) {
   const found = product.specs.find((s) => s.key === key);
-  return found ? found.value : null;
+  return found ? localizeSpecValue(found.value, lang) : null;
 }
 ---
 <BaseLayout title={t('nav_home')}>
@@ -48,7 +48,8 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
       {featured.map((product) => (
         <a class="featured-card" href={`/${lang}/products/${product.id}/`}>
           <div class="featured-photo">
-            <img src={product.image} alt={`${product.model} — ${t('product_image_alt')}`} loading="lazy" />
+            {/* 主推卡片在首屏内：eager 立即加载（lazy 会拖慢首屏 LCP） */}
+            <img src={product.image} alt={`${product.model} — ${t('product_image_alt')}`} loading="eager" decoding="async" />
           </div>
           <h3>{product.model}</h3>
           <dl class="featured-specs">
@@ -60,7 +61,8 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
       ))}
     </div>
 
-    <a class="btn btn-outline" href={`/${lang}/products/`}>{t('home_view_all')} →</a>
+    <!-- 箭头字符是有方向的，RTL（波斯语）下需要镜像；.dir-arrow 的翻转规则在 global.css -->
+    <a class="btn btn-outline" href={`/${lang}/products/`}>{t('home_view_all')} <span class="dir-arrow" aria-hidden="true">→</span></a>
   </section>
 
   <!-- ===== 为什么选择我们（真实产品优势，非占位）===== -->
@@ -104,6 +106,7 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
   <section class="home-section">
     <h2>{t('home_cert_title')}</h2>
     <Placeholder note="真实拥有的认证/资质名称列表（如 ISO/CE/专利，只列真实的），CONTENT-TODO E1" />
+    <Placeholder note="质检流程简述（约50字，可选），CONTENT-TODO E3" />
     <div class="ph-images">
       <Placeholder note="证书扫描件/图片（每证1张），CONTENT-TODO E2" />
     </div>
@@ -115,6 +118,15 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
     <Placeholder note="发动机实际用途（如无人机/动力伞/轻型飞行器，按真实客户填），CONTENT-TODO F1" />
     <div class="ph-images">
       <Placeholder note="应用实拍图 x2–4（装机/试飞等），CONTENT-TODO F2" />
+    </div>
+  </section>
+
+  <!-- ===== 客户与案例（占位，CONTENT-TODO G1/G2）===== -->
+  <section class="home-section">
+    <h2>{t('home_cases_title')}</h2>
+    <Placeholder note="合作客户/出口国家/案例 3–6 条（只写真实的，可脱敏），CONTENT-TODO G1" />
+    <div class="ph-images">
+      <Placeholder note="客户评价（如有授权，每条≤50字+客户身份），CONTENT-TODO G2" />
     </div>
   </section>
 

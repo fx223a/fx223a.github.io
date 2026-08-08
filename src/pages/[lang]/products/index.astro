@@ -6,7 +6,7 @@
 // ============================================================
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { locales } from '../../../i18n/config';
-import { useTranslations } from '../../../i18n/utils';
+import { useTranslations, localizeSpecValue } from '../../../i18n/utils';
 import products from '../../../data/products.json';
 
 // 为每一种“已启用语言”各生成一个产品列表页
@@ -41,15 +41,17 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
 
     <!-- 产品卡片网格：每个型号一张卡片 -->
     <div class="product-grid">
-      {products.map((product) => (
+      {products.map((product, i) => (
         <a class="product-card" href={`/${lang}/products/${product.id}/`}>
           <!-- 主图：固定高度容器 + object-fit: contain，保证每张卡图片高度一致、不变形、不裁切。
-               alt 文字 = 型号名 + 翻译描述（走 i18n，随语言切换）。loading="lazy" 让图片按需加载。 -->
+               alt 文字 = 型号名 + 翻译描述（走 i18n，随语言切换）。
+               前 3 张在首屏内用 eager 立即加载（lazy 会拖慢首屏 LCP），其余按需加载。 -->
           <div class="product-photo">
             <img
               src={product.image}
               alt={`${product.model} — ${t('product_image_alt')}`}
-              loading="lazy"
+              loading={i < 3 ? 'eager' : 'lazy'}
+              decoding="async"
             />
           </div>
 
@@ -70,14 +72,16 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
               return value ? (
                 <div class="spec-row">
                   <dt>{t('spec_' + key)}</dt>
-                  <dd>{value.startsWith('specval_') ? t(value) : value}</dd>
+                  {/* specval_ token 走 i18n 翻译；数值型的值经 localizeSpecValue 做单位本地化（俄语显示 л.с./см³ 等） */}
+                  <dd>{value.startsWith('specval_') ? t(value) : localizeSpecValue(value, lang)}</dd>
                 </div>
               ) : null;
             })}
           </dl>
 
           <!-- 查看详情提示（整张卡片可点击进入详情页）-->
-          <span class="view-details">{t('view_details')} →</span>
+          <!-- 箭头字符是有方向的，RTL（波斯语）下需要镜像；.dir-arrow 的翻转规则在 global.css -->
+          <span class="view-details">{t('view_details')} <span class="dir-arrow" aria-hidden="true">→</span></span>
         </a>
       ))}
     </div>

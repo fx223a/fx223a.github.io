@@ -8,7 +8,7 @@
 // ============================================================
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { locales } from '../../../i18n/config';
-import { useTranslations } from '../../../i18n/utils';
+import { useTranslations, localizeSpecValue } from '../../../i18n/utils';
 import products from '../../../data/products.json';
 
 // 为“每种语言 × 每个型号”各生成一个详情页，并把该型号数据通过 props 传进来。
@@ -33,7 +33,8 @@ const mainImage = product.image;
 <BaseLayout title={product.model}>
   <!-- 返回列表的面包屑 -->
   <p class="breadcrumb">
-    <a href={`/${lang}/products/`}>← {t('nav_products')}</a>
+    <!-- 返回箭头是有方向的，RTL（波斯语）下需要镜像；.dir-arrow 的翻转规则在 global.css -->
+    <a href={`/${lang}/products/`}><span class="dir-arrow" aria-hidden="true">←</span> {t('nav_products')}</a>
   </p>
 
   <h1 class="detail-title">{product.model}</h1>
@@ -54,17 +55,18 @@ const mainImage = product.image;
     <!-- 左侧：图片画廊（大主图 + 3 张缩略图，点缩略图切换主图）-->
     <div class="gallery">
       <div class="gallery-main">
-        <img id="mainImage" src={mainImage} alt={imgAlt} />
+        <!-- 主图是本页的 LCP 元素：不能 lazy，且用 fetchpriority 提示浏览器优先加载 -->
+        <img id="mainImage" src={mainImage} alt={imgAlt} fetchpriority="high" decoding="async" />
       </div>
       <div class="gallery-thumbs">
-        {product.images.map((src) => (
+        {product.images.map((src, i) => (
           <button
             class={`thumb ${src === mainImage ? 'active' : ''}`}
             data-src={src}
             type="button"
-            aria-label={imgAlt}
+            aria-label={`${imgAlt} (${i + 1}/${product.images.length})`}
           >
-            <img src={src} alt={imgAlt} loading="lazy" />
+            <img src={src} alt={`${imgAlt} (${i + 1})`} loading="lazy" decoding="async" />
           </button>
         ))}
       </div>
@@ -77,8 +79,9 @@ const mainImage = product.image;
           {product.specs.map((s) => (
             <tr>
               <th scope="row">{t('spec_' + s.key)}</th>
-              {/* 值若是 specval_ 开头的 token（文字描述型）就走 i18n 翻译，否则原样显示（纯数字值） */}
-              <td>{s.value.startsWith('specval_') ? t(s.value) : s.value}</td>
+              {/* 值若是 specval_ 开头的 token（文字描述型）就走 i18n 翻译；
+                  数值型的值经 localizeSpecValue 做单位本地化（俄语显示 л.с./см³/об/мин 等） */}
+              <td>{s.value.startsWith('specval_') ? t(s.value) : localizeSpecValue(s.value, lang)}</td>
             </tr>
           ))}
         </tbody>

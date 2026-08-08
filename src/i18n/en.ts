@@ -9,12 +9,14 @@ export default {
   site_tagline: 'Two-stroke aircraft engines',       // 品牌标语（真实产品定位；可按 CONTENT-TODO A3 调整）
 
   // ===== 顶部导航栏 =====
+  nav_main_label: 'Main navigation',                 // 主导航区的无障碍标签（页面上不可见，读屏软件用）
   nav_home: 'Home',                                  // 导航：首页
   nav_products: 'Products',                          // 导航：产品列表
-  nav_inquiry: 'Request a Quote',                    // 导航：询价
+  nav_inquiry: 'Request a quote',                    // 导航：询价（全站统一句首大写风格）
 
   // ===== 语言切换器 =====
   language_label: 'Language',                        // “语言”文字标签
+  skip_to_content: 'Skip to main content',           // 无障碍跳转链接（键盘 Tab 第一个焦点）
 
   // ===== 首页：顶部大区块(hero) =====（已按真实产品重写）
   home_hero_title: 'Two-stroke aircraft engines, 120cc–730cc', // 首页大标题
@@ -37,9 +39,10 @@ export default {
 
   // ===== 首页：其它板块标题（正文为占位，见 CONTENT-TODO）=====
   home_about_title: 'About us',                      // 关于我们
-  home_factory_title: 'Manufacturing',              // 工厂与产能
+  home_factory_title: 'Manufacturing & capacity',   // 工厂与产能（补齐「产能」，与中文口径一致）
   home_cert_title: 'Quality & certifications',       // 质量与资质
   home_applications_title: 'Applications',           // 应用场景
+  home_cases_title: 'Customers & references',        // 客户案例（CONTENT-TODO G1/G2）
   home_contact_title: 'Get a quote',                 // 联系/询价引导
   home_contact_text: 'Tell us your airframe and target take-off weight — we will recommend a model.', // 询价引导正文
 
@@ -55,7 +58,7 @@ export default {
   view_details: 'View details',                      // 列表卡片：查看详情
 
   // ===== 询价表单页 =====
-  inquiry_title: 'Request a Quote',                  // 询价页大标题
+  inquiry_title: 'Request a quote',                  // 询价页大标题
   inquiry_intro: 'Fill in the form and we will get back to you with a price and details.', // 询价页副标题
   form_name: 'Name',                                 // 表单字段：姓名
   form_company: 'Company',                           // 表单字段：公司
@@ -66,22 +69,30 @@ export default {
   form_quantity: 'Quantity',                         // 表单字段：数量
   form_message: 'Message',                           // 表单字段：留言
   form_submit: 'Send request',                       // 提交按钮
-  form_success: 'Thank you! Your request has been recorded (demo only — no email is sent yet).', // 提交后的占位提示
+  form_sending: 'Sending…',                          // 提交按钮的进行中状态
+  form_success: 'Thank you! Your request has been sent — we will get back to you shortly.', // 提交成功提示
+  form_error: 'Submission failed. Please try again, or contact us directly via the details in the footer.', // 提交失败提示
+  form_error_network: 'Network error — your request was not sent. Please check your connection and try again, or contact us via the details in the footer.', // 网络错误提示
+  form_required_hint: 'Fields marked * are required', // 必填说明
+  form_privacy_note: 'We only use this information to reply to your inquiry.', // 表单底部隐私说明
+  inquiry_success_title: 'Request sent',             // 无 JS 成功页标题
+  inquiry_success_body: 'Thank you for your inquiry! We will reply by email or phone shortly.', // 无 JS 成功页正文
+  inquiry_success_back: 'Back to home',              // 无 JS 成功页返回链接
 
   // ===== 参数标签（spec_ 开头）=====
   // 说明：这些是参数表里“字段名”的翻译。参数的“数值”（如 11.22hp）不随语言变，直接存在 products.json 里。
   spec_power: 'Power',                               // 功率
-  spec_static_thrust_100m: 'Static thrust (100 m)',  // 拉力（海拔 100 米）
-  spec_static_thrust_1800m: 'Static thrust (1800 m)',// 拉力（海拔 1800 米）
+  spec_static_thrust_100m: 'Static thrust (100 m altitude)',  // 静推力（海拔 100 米）
+  spec_static_thrust_1800m: 'Static thrust (1800 m altitude)',// 静推力（海拔 1800 米）
   spec_max_takeoff_weight: 'Max take-off weight',    // 最大起飞重量
   spec_recommended_propeller: 'Recommended propeller',// 适用螺旋桨规格
-  spec_diameter_stroke: 'Diameter × Stroke',         // 缸径 × 行程
+  spec_diameter_stroke: 'Bore × stroke',             // 缸径 × 行程（缸径的行业标准词是 bore，不是 diameter）
   spec_displacement: 'Displacement',                 // 排量
   spec_weight: 'Weight',                             // 重量
   spec_crankshaft: 'Crankshaft',                     // 曲轴
   spec_speed_range: 'Speed range',                   // 转速范围
-  spec_lubrication_ratio: 'Lubrication ratio',       // 燃油/润滑比例
-  spec_ignition_voltage: 'Ignition voltage',         // 点火器电压
+  spec_lubrication_ratio: 'Fuel/oil mix ratio',      // 燃油/机油混合比（值形如 25:1）
+  spec_ignition_voltage: 'Igniter supply voltage',   // 点火器供电电压（6.0–8.4 V DC 是供电电压，不是次级高压）
   spec_generator: 'Generator',                       // 发电机
   spec_fuel_consumption_carburetor: 'Fuel consumption (carburetor)', // 油耗（化油器款）
   spec_fuel_consumption_efi: 'Fuel consumption (EFI)', // 油耗（电喷款）
@@ -98,7 +109,7 @@ export default {
   spec_firing_order: 'Firing order',                 // 点火次序
   spec_piston: 'Piston',                             // 活塞
   spec_cylinder: 'Cylinder',                         // 缸体
-  spec_engine_stroke: 'Engine stroke',               // 发动机冲程
+  spec_engine_stroke: 'Engine cycle',                // 发动机冲程（避免与上面的 stroke=活塞行程混淆，值是 Two-stroke）
   spec_layout_form: 'Layout',                        // 布局形式
   spec_starter: 'Starter',                           // 启动器
 
@@ -109,7 +120,7 @@ export default {
   feature_air_cooled: 'Air-cooled',                  // 风冷
   feature_water_cooled: 'Water-cooled',              // 水冷
   feature_two_stroke: 'Two-stroke',                  // 二冲程
-  feature_auto_cdi_ignition: 'Automatic CDI ignition', // 自动进角 CDI 点火
+  feature_auto_cdi_ignition: 'CDI ignition with automatic advance', // 自动进角 CDI 点火（补上「进角/advance」）
   feature_dc_cdi_ignition: 'DC CDI electronic ignition', // 直流 CDI 电子点火
   feature_solid_state_magneto_ignition: 'Solid-state magneto ignition', // 固态磁电机点火
   feature_mixture_lubrication: 'Mixture lubrication',// 混合气润滑
@@ -123,9 +134,9 @@ export default {
   specval_high_strength_alloy_steel: 'High strength alloy steel',        // 高强度合金钢
   specval_forging_seven_piece: 'Forging, seven-piece set',               // 锻造，七件组合体
   specval_dc_cdi_electronic_ignition: 'DC CDI electronic ignition',      // 直流CDI电子点火
-  specval_cdi_automatic_angle_ignition: 'CDI automatic angle ignition',  // CDI自动进角点火器
-  specval_carb_allround_choke: 'All-round carburettor with choke',       // 全方位化油器，带阻风门
-  specval_carb_two_diaphragm: 'Two diaphragm-type all-around carburetors, without choke / injector nozzles', // 2个薄膜式全方位化油器，不带阻风门/喷油口
+  specval_cdi_automatic_angle_ignition: 'CDI with automatic spark advance', // CDI自动进角点火器（行业标准说法）
+  specval_carb_allround_choke: 'All-round carburetor with choke',        // 全方位化油器，带阻风门（全站统一美式拼写 carburetor）
+  specval_carb_two_diaphragm: 'Two diaphragm-type all-round carburetors, without choke / injector nozzles', // 2个薄膜式全方位化油器，不带阻风门/喷油口（统一 all-round 写法）
   specval_option_starter_24v: 'Starter 24V / optional electric start',   // 启动器 24V/可选配电启动
   specval_option_exhaust_starter_generator: 'Exhaust pipe, starter, generator', // 排气接管 启动器 发电机
   specval_piston_oval_alloy: 'Oval grinding, aluminum alloy casting',    // 椭圆形磨削，铝合金铸造

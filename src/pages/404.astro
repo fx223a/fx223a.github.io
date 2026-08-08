@@ -1,0 +1,66 @@
+---
+// ============================================================
+// 404 页面（找不到页面时显示）
+// 静态托管（如 GitHub Pages）只认根目录一个 404.html，无法按语言分开，
+// 所以这一页把三种语言的提示并列展示，各自链接回对应语言首页。
+// 页面底部的小脚本会根据来路网址里的语言段（/ru/ /en/ /zh/）把对应语言排到最前。
+// ============================================================
+import { dir, locales, localeNames, defaultLocale } from '../i18n/config';
+import { useTranslations } from '../i18n/utils';
+import '../styles/global.css';
+
+// 每种语言一段提示文案（页面级硬编码：404 页无法确定单一语言，且这些是通用 UI 文案）
+const messages: Record<string, { title: string; body: string; back: string }> = {
+  ru: { title: 'Страница не найдена', body: 'Такой страницы нет или она была перемещена.', back: 'На главную' },
+  en: { title: 'Page not found', body: 'This page does not exist or has been moved.', back: 'Back to home' },
+  zh: { title: '页面不存在', body: '您访问的页面不存在或已被移动。', back: '返回首页' },
+  fa: { title: 'صفحه پیدا نشد', body: 'این صفحه وجود ندارد یا منتقل شده است.', back: 'بازگشت به خانه' },
+};
+
+const t = useTranslations(defaultLocale);
+---
+<!doctype html>
+<html lang={defaultLocale} dir={dir(defaultLocale)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>404 · {t('site_name')}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <main class="site-main nf-main" id="main">
+      <p class="nf-code" aria-hidden="true">404</p>
+      {locales.map((loc) => (
+        <section class="nf-block" id={`nf-${loc}`} lang={loc} dir={dir(loc)}>
+          <h2>{messages[loc].title}</h2>
+          <p>{messages[loc].body}</p>
+          <a class="btn" href={`/${loc}/`}>{messages[loc].back} ({localeNames[loc]})</a>
+        </section>
+      ))}
+    </main>
+
+    <script>
+      // 根据来路网址里的语言段，把对应语言的提示块排到最前面
+      const seg = location.pathname.split('/').filter(Boolean)[0];
+      const block = seg ? document.getElementById('nf-' + seg) : null;
+      if (block && block.parentElement) {
+        block.parentElement.insertBefore(block, block.parentElement.querySelector('.nf-block'));
+      }
+    </script>
+
+    <style>
+      .nf-main { text-align: center; padding-block: 3rem; }
+      .nf-code {
+        font-size: 5rem;
+        font-weight: 700;
+        color: #b91c1c;
+        margin-block: 0 1rem;
+        line-height: 1;
+      }
+      .nf-block { margin-block-end: 2rem; }
+      .nf-block h2 { margin-block: 0 0.25rem; }
+      .nf-block p { color: #555; margin-block: 0 0.75rem; }
+    </style>
+  </body>
+</html>

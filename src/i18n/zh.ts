@@ -10,12 +10,14 @@ export default {
   site_tagline: '二冲程航空发动机',                    // 品牌标语（真实产品定位；可按 CONTENT-TODO A3 调整）
 
   // ===== 顶部导航栏 =====
+  nav_main_label: '主导航',                           // 主导航区的无障碍标签（页面上不可见，读屏软件用）
   nav_home: '首页',                                  // 导航：首页
   nav_products: '产品',                              // 导航：产品列表
   nav_inquiry: '询价',                               // 导航：询价
 
   // ===== 语言切换器 =====
   language_label: '语言',                            // “语言”文字标签
+  skip_to_content: '跳到主内容',                      // 无障碍跳转链接（键盘 Tab 第一个焦点）
 
   // ===== 首页：顶部大区块(hero) =====（已按真实产品重写）
   home_hero_title: '二冲程航空发动机，120cc–730cc',   // 首页大标题
@@ -41,6 +43,7 @@ export default {
   home_factory_title: '工厂与产能',                   // 工厂与产能
   home_cert_title: '质量与资质',                      // 质量与资质
   home_applications_title: '应用场景',                // 应用场景
+  home_cases_title: '客户与案例',                     // 客户案例（CONTENT-TODO G1/G2）
   home_contact_title: '获取报价',                     // 联系/询价引导
   home_contact_text: '告诉我们你的机型和目标起飞重量，我们会推荐合适型号。', // 询价引导正文
 
@@ -67,20 +70,28 @@ export default {
   form_quantity: '数量',                             // 数量
   form_message: '留言',                              // 留言
   form_submit: '提交询价',                           // 提交按钮
-  form_success: '谢谢！您的询价已记录（演示占位，暂不发送邮件）。', // 提交后占位提示
+  form_sending: '发送中…',                           // 提交按钮的进行中状态
+  form_success: '谢谢！您的询价已发送，我们会尽快回复您。', // 提交成功提示
+  form_error: '提交失败，请稍后重试，或直接通过页脚的联系方式找到我们。', // 提交失败提示
+  form_error_network: '网络异常，发送未成功。请检查网络后重试，或直接通过页脚的联系方式找到我们。', // 网络错误提示
+  form_required_hint: '带 * 为必填项',                // 必填说明
+  form_privacy_note: '我们只会用这些信息回复您的询价。', // 表单底部隐私说明
+  inquiry_success_title: '询价已发送',                // 无 JS 成功页标题
+  inquiry_success_body: '感谢您的询价！我们会尽快通过邮箱或电话回复您。', // 无 JS 成功页正文
+  inquiry_success_back: '返回首页',                   // 无 JS 成功页返回链接
 
   // ===== 参数标签（spec_ 开头，采用 PDF 原始中文）=====
   spec_power: '功率',                                // Power
-  spec_static_thrust_100m: '拉力（海拔 100 米）',      // Static thrust (100 m)
-  spec_static_thrust_1800m: '拉力（海拔 1800 米）',    // Static thrust (1800 m)
+  spec_static_thrust_100m: '静推力（海拔 100 米）',    // Static thrust (100 m)。统一用「静推力」，与首页文案一致（厂家 PDF 原文写「拉力」，同一概念）
+  spec_static_thrust_1800m: '静推力（海拔 1800 米）',  // Static thrust (1800 m)
   spec_max_takeoff_weight: '最大起飞重量',            // Max take-off weight
-  spec_recommended_propeller: '适用螺旋桨规格',        // Recommended propeller
+  spec_recommended_propeller: '推荐螺旋桨规格',        // Recommended propeller。四语统一为「推荐」口径
   spec_diameter_stroke: '缸径 × 行程',               // Diameter × Stroke
   spec_displacement: '排量',                         // Displacement
   spec_weight: '重量',                               // Weight
   spec_crankshaft: '曲轴',                           // Crankshaft
   spec_speed_range: '转速范围',                       // Speed range
-  spec_lubrication_ratio: '燃油比例',                 // Lubrication ratio
+  spec_lubrication_ratio: '燃油/机油混合比',           // Fuel/oil mix ratio（值形如 25:1，指燃油与机油的混合比例）
   spec_ignition_voltage: '点火器电压',                // Ignition voltage
   spec_generator: '发电机',                          // Generator
   spec_fuel_consumption_carburetor: '油耗（化油器款）', // Fuel consumption (carburetor)
@@ -131,5 +142,5 @@ export default {
   specval_two_stroke: '二冲程',                                // Two-stroke
   specval_layout_h_opposed_4: '水平对置，4缸',                  // Horizontally opposed, 4 cylinders
   specval_optional: '可选件',                                  // Optional
-  specval_firing_opposed_500: '对置两缸同步点火，500转自动转换', // Opposed two-cylinder synchronous ignition, auto switching at 500 rpm
+  specval_firing_opposed_500: '对置两缸同步点火，500 rpm 时自动转换', // Opposed two-cylinder synchronous ignition, auto switching at 500 rpm（转速单位全站统一用 rpm）
 };

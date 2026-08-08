@@ -5,10 +5,11 @@
 // 例如你正在看 /en/products/，点“Русский”就会跳到 /ru/products/。
 // ============================================================
 import { locales, localeNames } from '../i18n/config';
-import { getLangFromUrl } from '../i18n/utils';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 // 当前语言（从网址识别）
 const currentLang = getLangFromUrl(Astro.url);
+const t = useTranslations(currentLang);
 
 // 计算“去掉语言前缀后”的当前路径，这样切换语言时能停在同一个页面。
 // 例：/en/products/ → 切掉 'en' → 剩下 'products'
@@ -16,12 +17,17 @@ const segments = Astro.url.pathname.split('/').filter(Boolean); // 例如 ['en',
 segments.shift();                                               // 去掉第一段（语言代码）
 const restPath = segments.join('/');                            // 例如 'products'
 ---
-<div class="lang-switcher">
+<!-- 用 <nav> + aria-label 让屏幕阅读器知道这是“语言”导航区；
+     aria-current 标记当前语言（只有 class="active" 屏幕阅读器是感知不到的）。
+     每个链接的 lang 属性告诉读屏软件用对应语言朗读语言名。 -->
+<nav class="lang-switcher" aria-label={t('language_label')}>
   {locales.map((loc) => (
     <a
       href={restPath ? `/${loc}/${restPath}/` : `/${loc}/`}
       class={loc === currentLang ? 'active' : ''}
+      aria-current={loc === currentLang ? 'true' : undefined}
       hreflang={loc}
+      lang={loc}
     >{localeNames[loc]}</a>
   ))}
-</div>
+</nav>

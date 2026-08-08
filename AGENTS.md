@@ -9,9 +9,9 @@
 - 所有待填项清单见根目录 **`CONTENT-TODO.md`**。
 - **上线前必须把 `CONTENT-TODO.md` 里的每一项都替换成客户提供的真实内容**，否则**不得执行第 8 步部署**。
 - 硬规则：在客户提供真实内容前，**绝不编造**任何看起来像真的的信息（公司名、成立年份、产能、认证、客户案例、地址、电话）。占位必须一眼可辨（`<Placeholder>` 组件 / `【待填：…】`）。
-- 部署前自检：全站搜索 `待填` / `Placeholder` 应为 0 结果，方可部署。
+- 部署前自检：**`npm run check:placeholders`** 必须通过（全站搜索 `待填` / `Placeholder` 为 0），方可部署。此自检已脚本化（`scripts/check-placeholders.mjs`）。
 
-## 📌 当前进度与下次开工（2026-07-16 暂停）
+## 📌 当前进度与下次开工（2026-08-08 更新）
 
 按 8 步计划：
 
@@ -20,12 +20,31 @@
 3. ✅ 全局布局与样式（BaseLayout、语言切换器、global.css）
 4. ✅ 产品数据 + 列表页（`src/data/products.json`、`src/pages/[lang]/products/index.astro`）
 5. ✅ 产品详情页（`src/pages/[lang]/products/[id].astro`，多角度图 + 全参数表）
-6. ✅ 询价表单页（`src/pages/[lang]/inquiry/index.astro`，型号下拉自动生成，占位提交，详情页可带型号跳入）
-7. ⏳ **内容填充 + 翻译校对**——**等客户提供真实资料后再做**（客户正在准备 `CONTENT-TODO.md` 里的内容；翻译校对也一起等资料齐了做）
-8. ⛔ 部署上线——**被上线红线拦住**（占位未填完禁止部署）；生产构建本身已通过（30 页无错）
+6. ✅ 询价表单页（真实化改造完成：POST 提交、三态 UI、蜜罐防垃圾、无 JS 成功页；**接口地址待填** `src/config/site.ts`）
+7. 🔶 内容填充 + 翻译校对——**术语校对已完成**（四语 20 条术语修正 + 俄语单位本地化 л.с./см³/об/мин）；**内容填充等客户资料**
+8. ⛔ 部署上线——被上线红线拦住（占位未填完禁止部署）；构建 34 页无错；SEO 架子已搭好（域名填入 `astro.config.mjs` 的 `site` 后 canonical/hreflang/OG 自动激活）
 
-**下次开工从这里继续**：客户提供资料后，① 对照 `CONTENT-TODO.md` 编号逐条替换占位；② 做第 7 步翻译校对（ru/en/zh 术语一致性）；③ 部署前自检"全站搜 `待填`/`Placeholder` = 0"，再做第 8 步部署。
-首页主推型号当前默认 T120/T350/T730（`src/pages/[lang]/index.astro` 的 `featuredIds`），待客户确认（CONTENT-TODO I1）。
+### 2026-08-08 已完成的技术工作
+
+- **git 已初始化**（此前无版本控制），基线提交 + 本轮改动提交
+- **询价表单真实化**：修掉「无 action 时 JS 失效会 GET 泄露客户资料到地址栏」的隐私 bug；三态 UI（提交中/成功/失败）+ `role="status"`/`role="alert"` + 焦点管理；蜜罐 + 时间戳防垃圾；autocomplete；`/[lang]/inquiry/success/` 无 JS 成功页；「演示占位」文案已全部移除
+- **SEO**：meta description、favicon link、theme-color 即时生效；canonical/hreflang(含 x-default)/Open Graph 已写好、依赖 `site` 配置（域名定了自动激活）
+- **四语术语校对**：Bore × stroke、Engine cycle、CDI with automatic spark advance、静推力统一、燃油/机油混合比、俄语补 опережение/зажигание、波斯语 جرقه‌زنی 词族统一等 20 条
+- **俄语单位本地化**：`localizeSpecValue()`（`src/i18n/utils.ts`），俄语页面显示 л.с./кВт/см³/об/мин/кг/мм
+- **补齐坑位**：A3 标语已渲染进页脚、B5 工作时间、E3 质检流程、G1/G2 客户案例整个 section（新 i18n key `home_cases_title` 四语齐）
+- **a11y**：skip-link、主导航 aria-label + 当前页高亮、语言切换器 `<nav>` + aria-current + lang 属性
+- **RTL**：三处方向箭头改 `.dir-arrow`（RTL 自动镜像）
+- **其它**：404 页（三语并列+按来路排序）、robots.txt、`npm run check:placeholders` 防呆脚本、`prebuild` 清 .DS_Store、README 重写
+
+### 已定的部署决策（2026-08-08 调研，含真实探针实测）
+
+- **托管**：**GitHub Pages**（三国实测中与 Vercel 并列最优，且无商用限制）。**排除**：Cloudflare Pages/代理DNS/Turnstile（俄罗斯 16KB 节流+ECH 封锁，免费版无解）、Netlify（伊朗 DNS 投毒）、Vercel Hobby（禁商用）、Yandex Cloud 主站（乌克兰制裁封锁）
+- **询价接口**：独立 Vercel 小项目（约 80 行），Resend 发邮件 + 服务端调 Telegram Bot API（**`api.telegram.org` 在俄/伊被封，绝不能前端直调**）+ 可选企业微信机器人（用户在国内收不到 Telegram）
+- **域名**：`.com`（Porkbun 注册，DNS 不接 Cloudflare）；**`.ru` 不买**——俄罗斯 2026-09-01 起强制 Gosuslugi 身份验证，外国主体无通道
+- 上线后用 Globalping 实测真实域名在俄/乌/伊的可达性（含 >16KB 文件节流测试），再决定要不要加俄罗斯镜像（Timeweb）
+
+**下次开工从这里继续**：① 等客户给公司名/联系方式/简介 → 对照 `CONTENT-TODO.md` 逐条替换；② 客户给收询价邮箱 + Telegram 账号 → 搭询价接口（Resend+Telegram），把地址填进 `src/config/site.ts`；③ 公司名定了 → 买 `.com` 域名 → 填 `astro.config.mjs` 的 `site` + 装 `@astrojs/sitemap` + robots.txt 补 Sitemap 行；④ `npm run deploy:check` 全绿 → 部署 GitHub Pages。
+首页主推型号当前默认 T120/T350/T730（`src/pages/[lang]/index.astro` 的 `featuredIds`），待客户确认（CONTENT-TODO I1）。波斯语是否随首发上线待客户拍板（fa 翻译已完成）。
 
 ## 1. 项目背景
 

@@ -135,3 +135,37 @@ body {
 .btn:hover {
   background: #991b1b;
 }
+
+/* ===== 方向性箭头（→ / ←） ===== */
+/* 箭头是“字符”，CSS 逻辑属性管不了它的指向。
+   RTL（波斯语）页面下把它水平镜像，让“前进/返回”的方向仍然正确。 */
+.dir-arrow {
+  display: inline-block;
+}
+[dir='rtl'] .dir-arrow {
+  transform: scaleX(-1);
+}
+
+/* ===== 跳到主内容（无障碍） ===== */
+/* 键盘用户按 Tab 时第一个焦点就是它，回车直接跳过整个页眉；
+   平时视觉上藏在屏幕外，获得焦点时才出现。 */
+.skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  background: #b91c1c;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 6px 6px;
+  text-decoration: none;
+  z-index: 100;
+}
+.skip-link:focus {
+  inset-inline-start: 1rem;
+  inset-block-start: 0;
+}
+
+/* ===== 主导航当前页高亮 ===== */
+.nav a[aria-current='page'] {
+  color: #b91c1c;
+  font-weight: 700;
+}
