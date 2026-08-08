@@ -80,8 +80,9 @@ const mainImage = product.image;
             <tr>
               <th scope="row">{t('spec_' + s.key)}</th>
               {/* 值若是 specval_ 开头的 token（文字描述型）就走 i18n 翻译；
-                  数值型的值经 localizeSpecValue 做单位本地化（俄语显示 л.с./см³/об/мин 等） */}
-              <td>{s.value.startsWith('specval_') ? t(s.value) : localizeSpecValue(s.value, lang)}</td>
+                  数值型的值经 localizeSpecValue 做单位本地化（俄语显示 л.с./см³/об/мин 等）。
+                  <bdi>：数值是拉丁字符（LTR），在波斯语(RTL)页面里做双向文本隔离，防止单位被甩到错误一侧 */}
+              <td><bdi>{s.value.startsWith('specval_') ? t(s.value) : localizeSpecValue(s.value, lang)}</bdi></td>
             </tr>
           ))}
         </tbody>

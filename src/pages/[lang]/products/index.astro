@@ -72,8 +72,8 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
               return value ? (
                 <div class="spec-row">
                   <dt>{t('spec_' + key)}</dt>
-                  {/* specval_ token 走 i18n 翻译；数值型的值经 localizeSpecValue 做单位本地化（俄语显示 л.с./см³ 等） */}
-                  <dd>{value.startsWith('specval_') ? t(value) : localizeSpecValue(value, lang)}</dd>
+                  {/* specval_ token 走 i18n 翻译；数值经单位本地化；<bdi> 防止 RTL 下拉丁数值排乱 */}
+                  <dd><bdi>{value.startsWith('specval_') ? t(value) : localizeSpecValue(value, lang)}</bdi></dd>
                 </div>
               ) : null;
             })}

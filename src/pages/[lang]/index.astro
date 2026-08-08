@@ -50,10 +50,11 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
             <img src={product.image} alt={`${product.model} — ${t('product_image_alt')}`} loading="eager" decoding="async" />
           </div>
           <h3>{product.model}</h3>
+          {/* <bdi>：参数值是拉丁字符，防止在波斯语(RTL)页面里排乱 */}
           <dl class="featured-specs">
-            <div><dt>{t('spec_power')}</dt><dd>{getSpec(product, 'power')}</dd></div>
-            <div><dt>{t('spec_displacement')}</dt><dd>{getSpec(product, 'displacement')}</dd></div>
-            <div><dt>{t('spec_static_thrust_100m')}</dt><dd>{getSpec(product, 'static_thrust_100m')}</dd></div>
+            <div><dt>{t('spec_power')}</dt><dd><bdi>{getSpec(product, 'power')}</bdi></dd></div>
+            <div><dt>{t('spec_displacement')}</dt><dd><bdi>{getSpec(product, 'displacement')}</bdi></dd></div>
+            <div><dt>{t('spec_static_thrust_100m')}</dt><dd><bdi>{getSpec(product, 'static_thrust_100m')}</bdi></dd></div>
           </dl>
         </a>
       ))}
