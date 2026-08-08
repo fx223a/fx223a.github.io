@@ -25,6 +25,8 @@ jobs:
         run: node scripts/check-placeholders.mjs
       - name: Build Astro site
         uses: withastro/action@v3
+        with:
+          node-version: 22   # Astro 7 要求 Node >= 22.12
 
   deploy:
     needs: build
