@@ -53,7 +53,8 @@
 - **询价流程改为 WhatsApp 优先**（客户要求，价格私聊谈）：询价页 = WhatsApp 主按钮（wa.me/message/6XD3Z2WOCRP4L1）+ Telegram + 邮箱直连；表单变成“消息生成器”——填完打开 WhatsApp 预填询价消息，**无任何后端**。之前设计的 Resend+Telegram 接口方案不再需要
 - **联系方式**（`src/config/site.ts` 的 `CONTACT`）：WhatsApp/Telegram 同号 +86 157 0518 6291，邮箱 fashe250598617@163.com
 - **首页板块**：关于我们（真实简介：十年摩托车发动机、2024 起供无人机、累计 6 万台+）+ 新增「服务与保障」（质保/交付/技术支持/定制，来自报价单，价格已剔除）；工厂产能/质量资质/应用场景/客户案例四个板块**按客户要求暂删**，资料齐了加回（i18n 标题 key 都保留着）
-- **部署**：GitHub Pages（`fx223a/fx223a.github.io`），GitHub Actions 自动构建（push 到 main 即部署，CI 里先跑占位自检），`site: 'https://fx223a.github.io'`，sitemap + robots.txt 已生效
+- **部署**：GitHub Pages（`fx223a/fx223a.github.io`），GitHub Actions 自动构建（push 到 main 即部署，CI 里先跑占位自检）
+- **正式域名（2026-08-08 深夜启用）：https://uavdroneengine.com**（Porkbun 注册，DNS 4 条 A 记录指 GitHub Pages + www CNAME）。强制 HTTPS 已开启；www 与旧地址 fx223a.github.io 均 301 到主域名。换域名只需改 `astro.config.mjs` 的 site + robots.txt
 - Placeholder 组件与无 JS 成功页已删除（不再需要）
 
 **后续待办**：① 工厂/资质/应用/案例四板块等客户资料加回；② 自定义 `.com` 域名（换域名只改 `astro.config.mjs` 的 site + robots.txt 一行）；③ 波斯语上线（fa 翻译全部完成，加一行配置即生效，上线前先实测 RTL）；④ 高清产品图替换；⑤ 上线后用 Globalping 实测俄/乌/伊可达性。
