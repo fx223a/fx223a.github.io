@@ -12,7 +12,7 @@
 import { dir, locales, defaultLocale } from '../i18n/config';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 import LanguageSwitcher from '../components/LanguageSwitcher.astro';
-import Placeholder from '../components/Placeholder.astro';
+import { CONTACT } from '../config/site';
 import '../styles/global.css';
 
 // 从网址识别当前语言，并准备好翻译函数 t
@@ -91,14 +91,12 @@ const canonicalUrl = siteOrigin ? `${siteOrigin}/${lang}/${pagePath}` : null;
     </main>
 
     <footer class="site-footer">
-      <!-- 联系信息区（占位，见 CONTENT-TODO B）：全站页脚都显示，方便买家找到联系方式 -->
+      <!-- 联系信息区（真实信息，客户 2026-08-08 提供）：全站页脚都显示，方便买家找到联系方式 -->
       <div class="footer-contact">
         <h3>{t('footer_contact_title')}</h3>
-        <Placeholder note="公司地址（中·英），CONTENT-TODO B1" />
-        <Placeholder note="电话 / WhatsApp（带国家区号），CONTENT-TODO B2" />
-        <Placeholder note="业务邮箱，CONTENT-TODO B3" />
-        <Placeholder note="即时通讯 WhatsApp / 微信 / Telegram，CONTENT-TODO B4" />
-        <Placeholder note="工作时间 / 时区（可选），CONTENT-TODO B5" />
+        <p class="contact-line">WhatsApp: <a href={CONTACT.whatsappLink} rel="noopener">{CONTACT.phoneDisplay}</a></p>
+        <p class="contact-line">Telegram: <a href={CONTACT.telegramLink} rel="noopener">{CONTACT.phoneDisplay}</a></p>
+        <p class="contact-line">Email: <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p>
       </div>
       <p class="footer-copy">© {t('site_name')} — {t('site_tagline')} — {t('footer_rights')}</p>
     </footer>

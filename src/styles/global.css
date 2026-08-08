@@ -105,6 +105,17 @@ body {
   color: #1a1a1a;
 }
 
+.contact-line {
+  margin: 0;
+}
+.contact-line a {
+  color: #b91c1c;
+  text-decoration: none;
+}
+.contact-line a:hover {
+  text-decoration: underline;
+}
+
 .footer-copy {
   text-align: center;
   margin: 0;

@@ -1,12 +1,10 @@
 ---
 // ============================================================
 // 首页（多语言）
-// 已按真实产品（二冲程航空发动机 120–730cc）重写，替换掉原 Astro 模板的占位文案。
-// 结构：Hero → 主力型号展示 → 为什么选择我们(真实产品优势) → 关于/工厂/资质/应用(占位) → 询价引导。
-// ★ 凡是需要客户提供的真实内容，都用 <Placeholder> 醒目黄色框标出，见 CONTENT-TODO.md。
+// 结构：Hero → 主力型号展示 → 为什么选择我们 → 关于我们 → 服务与保障 → 询价引导。
+// 全部为真实内容（客户 2026-08-08 提供）；工厂/资质/应用/案例四个板块等资料齐了再加回。
 // ============================================================
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Placeholder from '../../components/Placeholder.astro';
 import { locales } from '../../i18n/config';
 import { useTranslations, localizeSpecValue } from '../../i18n/utils';
 import products from '../../data/products.json';
@@ -20,7 +18,7 @@ const t = useTranslations(lang);
 
 // 【首页主推型号】默认取入门/中端/顶配三款代表整条产品线。
 // 想换主推型号，改这个 id 列表即可（对应 CONTENT-TODO I1，待客户确认）。
-const featuredIds = ['zt-t120', 'zt-t350', 'zt-t730'];
+const featuredIds = ['yt-120', 'yt-350', 'yt-730'];
 const featured = featuredIds
   .map((id) => products.find((p) => p.id === id))
   .filter(Boolean) as typeof products;
@@ -84,51 +82,37 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
     </div>
   </section>
 
-  <!-- ===== 关于我们（占位）===== -->
+  <!-- ===== 关于我们（真实内容，客户 2026-08-08 提供）===== -->
   <section class="home-section">
     <h2>{t('home_about_title')}</h2>
-    <Placeholder note="公司简介，约80–120字（中·英·俄），见 CONTENT-TODO C1" />
-    <div class="ph-images">
-      <Placeholder note="公司/团队/门店照片 x1–2（横图 ≥1200px），CONTENT-TODO C2" />
+    <p class="about-text">{t('home_about_text')}</p>
+  </section>
+
+  <!-- ===== 服务与保障（真实内容，来自客户报价单，价格已剔除）===== -->
+  <section class="home-section">
+    <h2>{t('home_service_title')}</h2>
+    <div class="strength-grid">
+      <div class="strength">
+        <h3>{t('home_service_warranty_title')}</h3>
+        <p>{t('home_service_warranty_text')}</p>
+      </div>
+      <div class="strength">
+        <h3>{t('home_service_delivery_title')}</h3>
+        <p>{t('home_service_delivery_text')}</p>
+      </div>
+      <div class="strength">
+        <h3>{t('home_service_support_title')}</h3>
+        <p>{t('home_service_support_text')}</p>
+      </div>
+      <div class="strength">
+        <h3>{t('home_service_custom_title')}</h3>
+        <p>{t('home_service_custom_text')}</p>
+      </div>
     </div>
   </section>
 
-  <!-- ===== 工厂与产能（占位）===== -->
-  <section class="home-section">
-    <h2>{t('home_factory_title')}</h2>
-    <Placeholder note="工厂/产线介绍，约60–100字（中·英·俄），CONTENT-TODO D1" />
-    <div class="ph-images">
-      <Placeholder note="工厂照片 x3–6（车间/产线/测试台/装配，横图 ≥1200px），CONTENT-TODO D2" />
-    </div>
-  </section>
-
-  <!-- ===== 质量与资质（占位）===== -->
-  <section class="home-section">
-    <h2>{t('home_cert_title')}</h2>
-    <Placeholder note="真实拥有的认证/资质名称列表（如 ISO/CE/专利，只列真实的），CONTENT-TODO E1" />
-    <Placeholder note="质检流程简述（约50字，可选），CONTENT-TODO E3" />
-    <div class="ph-images">
-      <Placeholder note="证书扫描件/图片（每证1张），CONTENT-TODO E2" />
-    </div>
-  </section>
-
-  <!-- ===== 应用场景（占位）===== -->
-  <section class="home-section">
-    <h2>{t('home_applications_title')}</h2>
-    <Placeholder note="发动机实际用途（如无人机/动力伞/轻型飞行器，按真实客户填），CONTENT-TODO F1" />
-    <div class="ph-images">
-      <Placeholder note="应用实拍图 x2–4（装机/试飞等），CONTENT-TODO F2" />
-    </div>
-  </section>
-
-  <!-- ===== 客户与案例（占位，CONTENT-TODO G1/G2）===== -->
-  <section class="home-section">
-    <h2>{t('home_cases_title')}</h2>
-    <Placeholder note="合作客户/出口国家/案例 3–6 条（只写真实的，可脱敏），CONTENT-TODO G1" />
-    <div class="ph-images">
-      <Placeholder note="客户评价（如有授权，每条≤50字+客户身份），CONTENT-TODO G2" />
-    </div>
-  </section>
+  <!-- 工厂与产能 / 质量与资质 / 应用场景 / 客户案例 四个板块：
+       客户 2026-08-08 决定先删掉尽快上线，资料齐了再加回（i18n 标题 key 都还在）。 -->
 
   <!-- ===== 询价引导 ===== -->
   <section class="home-section home-cta">
@@ -152,9 +136,10 @@ function getSpec(product: { specs: { key: string; value: string }[] }, key: stri
     margin-block: 0 1.5rem;
   }
 
-  /* 占位图区：给多张占位一点排布空间 */
-  .ph-images {
-    margin-block-start: 0.75rem;
+  .about-text {
+    max-width: 720px;
+    color: #333;
+    margin: 0;
   }
 
   /* ===== 主力型号卡片 ===== */

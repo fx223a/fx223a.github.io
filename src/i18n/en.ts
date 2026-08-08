@@ -5,7 +5,7 @@
 // ============================================================
 export default {
   // ===== 品牌 / 通用 =====
-  site_name: '【待填·公司名】',                        // ⚠️占位：公司名/品牌名，见 CONTENT-TODO A1（上线前必须替换）
+  site_name: 'UAV Drone Engine',                     // 公司/品牌名（客户 2026-08-08 确认，四语统一用拉丁写法）
   site_tagline: 'Two-stroke aircraft engines',       // 品牌标语（真实产品定位；可按 CONTENT-TODO A3 调整）
 
   // ===== 顶部导航栏 =====
@@ -39,10 +39,22 @@ export default {
 
   // ===== 首页：其它板块标题（正文为占位，见 CONTENT-TODO）=====
   home_about_title: 'About us',                      // 关于我们
+  home_about_text: 'We have been manufacturing motorcycle engines in China for ten years, with extensive engine R&D and production experience. Since 2024 we also supply engines for UAVs. To date we have produced over 60,000 engines.', // 公司简介（客户 2026-08-08 提供）
   home_factory_title: 'Manufacturing & capacity',   // 工厂与产能（补齐「产能」，与中文口径一致）
   home_cert_title: 'Quality & certifications',       // 质量与资质
   home_applications_title: 'Applications',           // 应用场景
-  home_cases_title: 'Customers & references',        // 客户案例（CONTENT-TODO G1/G2）
+  home_cases_title: 'Customers & references',        // 客户案例（板块暂未上线，等客户后续补充资料）
+
+  // ===== 首页：服务与保障（真实内容，来自客户报价单，价格已剔除）=====
+  home_service_title: 'Service & support',
+  home_service_warranty_title: 'Warranty',
+  home_service_warranty_text: '12-month warranty on complete engines; 3 months on wear parts (spark plugs, seals, etc.).',
+  home_service_delivery_title: 'Delivery',
+  home_service_delivery_text: 'Standard models in stock; custom configurations delivered in 7–15 business days.',
+  home_service_support_title: 'Technical support',
+  home_service_support_text: 'Full technical support: installation, commissioning, troubleshooting and maintenance training.',
+  home_service_custom_title: 'Customization',
+  home_service_custom_text: 'Custom output shaft adapters, mounting flanges and more; both pusher and tractor mounting supported.',
   home_contact_title: 'Get a quote',                 // 联系/询价引导
   home_contact_text: 'Tell us your airframe and target take-off weight — we will recommend a model.', // 询价引导正文
 
@@ -59,7 +71,11 @@ export default {
 
   // ===== 询价表单页 =====
   inquiry_title: 'Request a quote',                  // 询价页大标题
-  inquiry_intro: 'Fill in the form and we will get back to you with a price and details.', // 询价页副标题
+  inquiry_intro: 'Pricing and details are discussed in chat — message us directly on WhatsApp or Telegram for the fastest reply.', // 询价页副标题（价格不放网站，客户要求）
+  inquiry_whatsapp_cta: 'Chat with us on WhatsApp',   // WhatsApp 主按钮
+  inquiry_or_form: 'Or fill in the form below — it will compose an inquiry message to our WhatsApp:', // 表单引导
+  form_submit_whatsapp: 'Send inquiry via WhatsApp',  // 表单提交按钮（打开 WhatsApp 预填消息）
+  form_whatsapp_opened: 'Opening WhatsApp… If it did not open, use the WhatsApp button above to contact us directly.', // 提交后提示
   form_name: 'Name',                                 // 表单字段：姓名
   form_company: 'Company',                           // 表单字段：公司
   form_email: 'Email',                               // 表单字段：邮箱

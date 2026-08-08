@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# 报价单（含价格，绝不进公开仓库）
+*.xlsx

@@ -6,7 +6,7 @@
 // ============================================================
 export default {
   // ===== 品牌 / 通用 =====
-  site_name: '【待填·公司名】',                        // ⚠️占位：公司名/品牌名，见 CONTENT-TODO A1（上线前必须替换）
+  site_name: 'UAV Drone Engine',                     // 公司/品牌名（客户 2026-08-08 确认，四语统一用拉丁写法）
   site_tagline: '二冲程航空发动机',                    // 品牌标语（真实产品定位；可按 CONTENT-TODO A3 调整）
 
   // ===== 顶部导航栏 =====
@@ -40,10 +40,22 @@ export default {
 
   // ===== 首页：其它板块标题（正文为占位，见 CONTENT-TODO）=====
   home_about_title: '关于我们',                       // 关于我们
+  home_about_text: '我们在中国从事摩托车发动机制造已有十年，拥有多年发动机研发与制造经验。自 2024 年起，我们同时为无人机提供发动机产品。累计生产发动机超过 60,000 台。', // 公司简介（客户 2026-08-08 提供）
   home_factory_title: '工厂与产能',                   // 工厂与产能
   home_cert_title: '质量与资质',                      // 质量与资质
   home_applications_title: '应用场景',                // 应用场景
-  home_cases_title: '客户与案例',                     // 客户案例（CONTENT-TODO G1/G2）
+  home_cases_title: '客户与案例',                     // 客户案例（板块暂未上线，等客户后续补充资料）
+
+  // ===== 首页：服务与保障（真实内容，来自客户报价单，价格已剔除）=====
+  home_service_title: '服务与保障',
+  home_service_warranty_title: '质保',
+  home_service_warranty_text: '整机质保 12 个月，易损件（火花塞、密封圈等）质保 3 个月。',
+  home_service_delivery_title: '交付',
+  home_service_delivery_text: '常规型号现货供应，定制配置 7–15 个工作日交付。',
+  home_service_support_title: '技术支持',
+  home_service_support_text: '提供全程技术支持：安装调试、故障排查、维护保养培训。',
+  home_service_custom_title: '定制服务',
+  home_service_custom_text: '支持定制改装输出轴、定制安装法兰等；推式/拉式安装均可。',
   home_contact_title: '获取报价',                     // 联系/询价引导
   home_contact_text: '告诉我们你的机型和目标起飞重量，我们会推荐合适型号。', // 询价引导正文
 
@@ -60,7 +72,11 @@ export default {
 
   // ===== 询价表单页 =====
   inquiry_title: '询价',                             // 询价页大标题
-  inquiry_intro: '填写下面的表单，我们会尽快回复您报价和详情。', // 询价页副标题
+  inquiry_intro: '价格与详情私聊洽谈——直接在 WhatsApp 或 Telegram 上联系我们，回复最快。', // 询价页副标题（价格不放网站，客户要求）
+  inquiry_whatsapp_cta: '在 WhatsApp 上联系我们',      // WhatsApp 主按钮
+  inquiry_or_form: '或填写下面的表单，会自动生成一条询价消息发到我们的 WhatsApp：', // 表单引导
+  form_submit_whatsapp: '在 WhatsApp 中发送询价',      // 表单提交按钮（打开 WhatsApp 预填消息）
+  form_whatsapp_opened: '正在打开 WhatsApp…若没有自动打开，请点击上方的 WhatsApp 按钮直接联系我们。', // 提交后提示
   form_name: '姓名',                                 // 姓名
   form_company: '公司',                              // 公司
   form_email: '邮箱',                                // 邮箱

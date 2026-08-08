@@ -1,20 +1,18 @@
 ---
 // ============================================================
-// 询价表单页（多语言）
+// 询价页（多语言）—— WhatsApp 优先（客户 2026-08-08 决定）
 // 网址：/ru/inquiry/ 、/en/inquiry/ 、/zh/inquiry/
-// 字段：姓名、公司、邮箱、电话、感兴趣的型号(下拉，自动来自 products.json)、数量、留言
-// 说明：
-//  - 所有标签与提示走 i18n，随语言切换。
-//  - 表单 POST 到 INQUIRY_ENDPOINT（src/config/site.ts，接口部署后填入）。
-//    有 JS 时用 fetch 提交，页面内显示 提交中/成功/失败 三态；
-//    无 JS 时浏览器原生 POST 到接口，接口返回 303 跳到本目录的 success 页。
-//  - 防垃圾：蜜罐字段(website) + 时间戳(ts)，由接口侧校验。
-//  - 支持从详情页带型号跳转：网址带 ?model=zt-t550 时，下拉会自动选中该型号。
+// 流程：价格不放网站。页面把客户引到 WhatsApp/Telegram 私聊；
+//       下面的表单是“消息生成器”：填完后一键打开 WhatsApp，
+//       消息内容已按字段预填好，客户点发送即可（无任何后端）。
+//  - 无 JS 时表单自动隐藏（hidden，由脚本移除），直连按钮始终可用——
+//    绝不会出现“提交了却没人收到”或“数据拼进地址栏”的情况。
+//  - 支持从详情页带型号跳转：?model=yt-550 时下拉自动选中。
 // ============================================================
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { locales } from '../../../i18n/config';
 import { useTranslations } from '../../../i18n/utils';
-import { INQUIRY_ENDPOINT } from '../../../config/site';
+import { CONTACT } from '../../../config/site';
 import products from '../../../data/products.json';
 
 export function getStaticPaths() {
@@ -23,52 +21,40 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
-
-// 无 JS 提交成功后，接口把用户 303 跳回到这个成功页（相对路径，接口侧拼绝对地址）
-const successPath = `/${lang}/inquiry/success/`;
 ---
 <BaseLayout title={t('inquiry_title')} description={t('inquiry_intro')}>
   <section class="inquiry">
     <h1>{t('inquiry_title')}</h1>
     <p class="inquiry-intro">{t('inquiry_intro')}</p>
 
-    <!-- 提交结果提示区：
-         role="status" + aria-live 让屏幕阅读器自动朗读内容变化；
-         tabindex="-1" 让脚本能把焦点移过来（视觉+读屏用户都能立即注意到）。 -->
-    <p id="formStatus" class="form-success" role="status" aria-live="polite" tabindex="-1" hidden></p>
-    <p id="formError" class="form-error" role="alert" tabindex="-1" hidden></p>
+    <!-- ===== 直连通道（主入口，无 JS 也可用）===== -->
+    <div class="contact-buttons">
+      <a class="btn btn-wa" href={CONTACT.whatsappLink} rel="noopener">
+        {t('inquiry_whatsapp_cta')}
+      </a>
+      <a class="btn btn-outline" href={CONTACT.telegramLink} rel="noopener">
+        Telegram: {CONTACT.phoneDisplay}
+      </a>
+      <a class="btn btn-outline" href={`mailto:${CONTACT.email}`}>
+        {CONTACT.email}
+      </a>
+    </div>
 
-    <!-- method="POST"：即使 JS 加载失败，浏览器原生提交也不会把客户资料拼进地址栏
-         （之前既无 action 也无 method，JS 一失效就会 GET 提交泄露姓名邮箱到 URL——已修复）。
-         data-msg-* 属性把 i18n 文案带给下方脚本用（脚本拿不到 frontmatter 变量）。 -->
+    <p class="or-form" id="orForm" hidden>{t('inquiry_or_form')}</p>
+
+    <!-- ===== 询价消息生成器（增强功能，需 JS；无 JS 时整体隐藏）=====
+         data-wa-number 提供纯数字号码给脚本拼 wa.me 链接；
+         提交时把各字段拼成一条结构化消息，打开 WhatsApp 预填好，客户按一下发送即可。 -->
     <form
       id="inquiryForm"
       class="inquiry-form"
-      method="POST"
-      action={INQUIRY_ENDPOINT || undefined}
-      data-msg-sending={t('form_sending')}
-      data-msg-success={t('form_success')}
-      data-msg-error={t('form_error')}
-      data-msg-network={t('form_error_network')}
+      hidden
+      data-wa-number={CONTACT.phoneDigits}
+      data-msg-opened={t('form_whatsapp_opened')}
     >
-      <p class="required-hint field-full">{t('form_required_hint')}</p>
-
-      <!-- 隐藏字段：语言（接口回信/通知用）+ 成功页地址（无 JS 时接口 303 跳转用） -->
-      <input type="hidden" name="lang" value={lang} />
-      <input type="hidden" name="redirect" value={successPath} />
-      <!-- 时间戳：页面加载时由脚本填入，接口用它识别“秒填秒交”的机器人 -->
-      <input type="hidden" name="ts" id="ts" value="" />
-
-      <!-- 蜜罐字段（防垃圾）：真人看不到也不会填；机器人会盲目填上，接口发现非空即丢弃。
-           用 CSS 移出屏幕而不是 display:none / hidden（聪明的机器人会跳过隐藏字段）。 -->
-      <div class="hp-field" aria-hidden="true">
-        <label for="website">Website</label>
-        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
-      </div>
-
       <div class="field">
-        <label for="name">{t('form_name')} *</label>
-        <input type="text" id="name" name="name" required autocomplete="name" maxlength="100" />
+        <label for="name">{t('form_name')}</label>
+        <input type="text" id="name" name="name" autocomplete="name" maxlength="100" />
       </div>
 
       <div class="field">
@@ -77,22 +63,12 @@ const successPath = `/${lang}/inquiry/success/`;
       </div>
 
       <div class="field">
-        <label for="email">{t('form_email')} *</label>
-        <input type="email" id="email" name="email" required autocomplete="email" maxlength="200" />
-      </div>
-
-      <div class="field">
-        <label for="phone">{t('form_phone')}</label>
-        <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="50" />
-      </div>
-
-      <div class="field">
         <label for="model">{t('form_model')}</label>
         <!-- 型号选项由 products.json 自动生成：value 用型号 id，显示用型号名 -->
         <select id="model" name="model">
           <option value="">{t('form_model_placeholder')}</option>
           {products.map((p) => (
-            <option value={p.id}>{p.model}</option>
+            <option value={p.id} data-model-name={p.model}>{p.model}</option>
           ))}
         </select>
       </div>
@@ -104,17 +80,25 @@ const successPath = `/${lang}/inquiry/success/`;
 
       <div class="field field-full">
         <label for="message">{t('form_message')}</label>
-        <textarea id="message" name="message" rows="4" maxlength="2000"></textarea>
+        <textarea id="message" name="message" rows="4" maxlength="1500"></textarea>
       </div>
 
-      <button type="submit" class="btn" id="submitBtn">{t('form_submit')}</button>
-      <p class="privacy-note field-full">{t('form_privacy_note')}</p>
+      <button type="submit" class="btn btn-wa">{t('form_submit_whatsapp')}</button>
     </form>
+
+    <!-- 打开 WhatsApp 后的提示（role=status：读屏软件自动朗读） -->
+    <p id="waOpened" class="wa-opened" role="status" aria-live="polite" hidden></p>
   </section>
 </BaseLayout>
 
 <script>
-  // 1) 若网址带 ?model=xxx（从详情页“询价”按钮跳来），自动选中对应型号。
+  // 有 JS 才显示表单（无 JS 用户直接用上方的直连按钮，不会遇到“提交了没人收到”）
+  const form = document.getElementById('inquiryForm') as HTMLFormElement | null;
+  const orForm = document.getElementById('orForm');
+  if (form) form.hidden = false;
+  if (orForm) orForm.hidden = false;
+
+  // 若网址带 ?model=xxx（从详情页“询价”按钮跳来），自动选中对应型号
   const params = new URLSearchParams(window.location.search);
   const wanted = params.get('model');
   const select = document.getElementById('model') as HTMLSelectElement | null;
@@ -123,76 +107,29 @@ const successPath = `/${lang}/inquiry/success/`;
     if (opt) select.value = wanted;
   }
 
-  // 2) 填入页面加载时间戳（接口用来识别“秒填秒交”的机器人）
-  const tsInput = document.getElementById('ts') as HTMLInputElement | null;
-  if (tsInput) tsInput.value = String(Date.now());
-
-  // 3) 真实提交：fetch POST 到接口，三态 UI（提交中/成功/失败）。
-  const form = document.getElementById('inquiryForm') as HTMLFormElement | null;
-  const statusEl = document.getElementById('formStatus') as HTMLElement | null;
-  const errorEl = document.getElementById('formError') as HTMLElement | null;
-  const btn = document.getElementById('submitBtn') as HTMLButtonElement | null;
-  const btnIdleText = btn?.textContent ?? '';
-
-  form?.addEventListener('submit', async (e) => {
+  // 提交 = 把字段拼成一条消息，打开 WhatsApp（wa.me 预填文本）
+  form?.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-    // 隐藏上一次的提示
-    if (statusEl) statusEl.hidden = true;
-    if (errorEl) errorEl.hidden = true;
-
-    // 提交中：按钮禁用 + 文案变“发送中…”，防止重复点击
-    if (btn) {
-      btn.disabled = true;
-      btn.setAttribute('aria-busy', 'true');
-      btn.textContent = form.dataset.msgSending ?? '…';
-    }
-
-    const showError = (msg: string) => {
-      if (errorEl) {
-        errorEl.textContent = msg;
-        errorEl.hidden = false;
-        errorEl.focus(); // 把焦点移到提示上：读屏立即朗读，视觉用户也会注意到
-      }
-    };
-
-    try {
-      const action = form.getAttribute('action');
-      if (!action) {
-        // 接口地址还没配置（INQUIRY_ENDPOINT 为空）：如实报错，绝不假装成功
-        showError(form.dataset.msgError ?? 'Error');
-        return;
-      }
-      const res = await fetch(action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { Accept: 'application/json' },
-      });
-      if (!res.ok) {
-        showError(form.dataset.msgError ?? 'Error');
-        return;
-      }
-      // 成功：清空表单（数据已送达），显示成功提示并把焦点移过去
-      form.reset();
-      if (tsInput) tsInput.value = String(Date.now()); // 重置时间戳，便于再次提交
-      if (statusEl) {
-        statusEl.textContent = form.dataset.msgSuccess ?? 'OK';
-        statusEl.hidden = false;
-        statusEl.focus();
-      }
-    } catch {
-      // 网络层失败（断网/被墙/超时）：提示网络错误，保留用户已填内容以便重试
-      showError(form.dataset.msgNetwork ?? form.dataset.msgError ?? 'Error');
-    } finally {
-      // 无论成败都要恢复按钮，否则失败后用户没法重试
-      if (btn) {
-        btn.disabled = false;
-        btn.removeAttribute('aria-busy');
-        btn.textContent = btnIdleText;
-      }
+    const lines: string[] = ['[Inquiry]'];
+    // 逐字段收集：用页面上的 label 文字做前缀（自动跟随当前语言）
+    form.querySelectorAll<HTMLElement>('.field').forEach((field) => {
+      const label = field.querySelector('label')?.textContent?.trim() ?? '';
+      const input = field.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
+      if (!input || !input.value) return;
+      // 型号下拉显示型号名而不是 id
+      const value = input instanceof HTMLSelectElement
+        ? (input.selectedOptions[0]?.dataset.modelName ?? input.value)
+        : input.value;
+      lines.push(`${label}: ${value}`);
+    });
+    const text = encodeURIComponent(lines.join('\n'));
+    const waUrl = `https://wa.me/${form.dataset.waNumber}?text=${text}`;
+    // 新标签打开 WhatsApp；本页显示提示（含兜底指引）
+    window.open(waUrl, '_blank', 'noopener');
+    const opened = document.getElementById('waOpened');
+    if (opened) {
+      opened.textContent = form.dataset.msgOpened ?? '';
+      opened.hidden = false;
     }
   });
 </script>
@@ -202,6 +139,39 @@ const successPath = `/${lang}/inquiry/success/`;
   .inquiry-intro {
     color: #555;
     margin-block: 0 1.5rem;
+    max-width: 640px;
+  }
+
+  /* 直连按钮组：WhatsApp 绿色主按钮 + Telegram/邮箱描边按钮 */
+  .contact-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-end: 2rem;
+  }
+  .contact-buttons .btn {
+    margin-block-start: 0;
+  }
+  .btn-wa {
+    background: #25d366;   /* WhatsApp 品牌绿 */
+    color: #fff;
+  }
+  .btn-wa:hover {
+    background: #1faa52;
+  }
+  .btn-outline {
+    background: transparent;
+    color: #b91c1c;
+    border: 1px solid #b91c1c;
+  }
+  .btn-outline:hover {
+    background: #fef2f2;
+  }
+
+  .or-form {
+    color: #555;
+    margin-block: 0 1rem;
+    max-width: 640px;
   }
 
   /* 两列栅格；窄屏自动单列。留言框跨满整行。 */
@@ -219,17 +189,7 @@ const successPath = `/${lang}/inquiry/success/`;
     flex-direction: column;
   }
   .field-full {
-    grid-column: 1 / -1;   /* 跨满整行 */
-  }
-  .required-hint {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #666;
-  }
-  .privacy-note {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #888;
+    grid-column: 1 / -1;
   }
   .field label {
     font-size: 0.85rem;
@@ -257,14 +217,6 @@ const successPath = `/${lang}/inquiry/success/`;
     resize: vertical;
   }
 
-  /* 蜜罐字段：移出可视区域（不能用 display:none，机器人会跳过隐藏字段） */
-  .hp-field {
-    position: absolute;
-    inset-inline-start: -9999px;
-    inset-block-start: auto;
-  }
-
-  /* 提交按钮复用全局 .btn 的红色样式；这里让它跨行并靠起始端对齐 */
   .inquiry-form .btn {
     grid-column: 1 / -1;
     justify-self: start;
@@ -272,30 +224,14 @@ const successPath = `/${lang}/inquiry/success/`;
     cursor: pointer;
     margin-block-start: 0.25rem;
   }
-  .inquiry-form .btn:disabled {
-    opacity: 0.6;
-    cursor: wait;
-  }
 
-  .form-success {
+  .wa-opened {
+    margin-block-start: 1rem;
     padding: 1rem 1.25rem;
     background: #ecfdf5;
     border: 1px solid #a7f3d0;
     border-radius: 8px;
     color: #065f46;
     max-width: 640px;
-  }
-  .form-error {
-    padding: 1rem 1.25rem;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    color: #991b1b;
-    max-width: 640px;
-  }
-  /* 提示块获得焦点时不需要焦点环（它不是交互元素，焦点只为读屏与滚动定位） */
-  .form-success:focus,
-  .form-error:focus {
-    outline: none;
   }
 </style>

@@ -2,5 +2,4 @@
 User-agent: *
 Allow: /
 
-# 【待填：域名定了之后，把下面一行的注释去掉并换成真实域名】
-# Sitemap: https://你的域名/sitemap-index.xml
+Sitemap: https://fx223a.github.io/sitemap-index.xml

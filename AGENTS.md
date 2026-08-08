@@ -2,14 +2,14 @@
 
 > 说明：本文件同时是 `CLAUDE.md`（根目录的 `CLAUDE.md` 是指向本文件的软链接）。
 
-## ⛔ 上线红线：占位内容未填完，禁止部署
+## ✅ 上线红线已解除（2026-08-08）——但硬规则永久有效
 
-网站当前含有**未填写的占位内容**（公司名、联系方式、公司简介、工厂/产能、认证资质、客户案例等），页面上以**黄色「待填」框**标出，代码里 i18n 的 `site_name` 等也是 `【待填·公司名】`。
+2026-08-08 客户提供了真实内容（公司名 UAV Drone Engine、简介、联系方式、报价单），占位内容已全部替换或按客户要求删除板块，`npm run check:placeholders` 通过，**网站已部署上线**。
 
-- 所有待填项清单见根目录 **`CONTENT-TODO.md`**。
-- **上线前必须把 `CONTENT-TODO.md` 里的每一项都替换成客户提供的真实内容**，否则**不得执行第 8 步部署**。
-- 硬规则：在客户提供真实内容前，**绝不编造**任何看起来像真的的信息（公司名、成立年份、产能、认证、客户案例、地址、电话）。占位必须一眼可辨（`<Placeholder>` 组件 / `【待填：…】`）。
-- 部署前自检：**`npm run check:placeholders`** 必须通过（全站搜索 `待填` / `Placeholder` 为 0），方可部署。此自检已脚本化（`scripts/check-placeholders.mjs`）。
+**永久硬规则**（后续补内容时同样适用）：
+- **绝不编造**任何看起来像真的的信息（成立年份、产能、认证、客户案例、地址）。只写客户明确提供的。
+- **价格绝不上网站**（客户要求）：询价引导到 WhatsApp 私聊。报价单 xlsx 已加入 `.gitignore`（含价格，绝不进公开仓库）。
+- 每次部署前 CI 会自动跑 `npm run check:placeholders`（`.github/workflows/deploy.yml`），有「待填」即拒绝部署。
 
 ## 📌 当前进度与下次开工（2026-08-08 更新）
 
@@ -43,8 +43,20 @@
 - **域名**：`.com`（Porkbun 注册，DNS 不接 Cloudflare）；**`.ru` 不买**——俄罗斯 2026-09-01 起强制 Gosuslugi 身份验证，外国主体无通道
 - 上线后用 Globalping 实测真实域名在俄/乌/伊的可达性（含 >16KB 文件节流测试），再决定要不要加俄罗斯镜像（Timeweb）
 
-**下次开工从这里继续**：① 等客户给公司名/联系方式/简介 → 对照 `CONTENT-TODO.md` 逐条替换；② 客户给收询价邮箱 + Telegram 账号 → 搭询价接口（Resend+Telegram），把地址填进 `src/config/site.ts`；③ 公司名定了 → 买 `.com` 域名 → 填 `astro.config.mjs` 的 `site` + 装 `@astrojs/sitemap` + robots.txt 补 Sitemap 行；④ `npm run deploy:check` 全绿 → 部署 GitHub Pages。
-首页主推型号当前默认 T120/T350/T730（`src/pages/[lang]/index.astro` 的 `featuredIds`），待客户确认（CONTENT-TODO I1）。波斯语是否随首发上线待客户拍板（fa 翻译已完成）。
+### 2026-08-08 晚间：正式上线
+
+客户提供真实内容并拍板，当天完成上线：
+
+- **公司名**：UAV Drone Engine（四语统一拉丁写法）
+- **型号改名**：ZT-T 系列 → 报价单的 **YT 系列**（YT-120CC/170CC/222CC/350CC/T350CC水冷/550CC/730CC），客户拍板。产品图同步改名 `yt-<型号>-<序号>.jpg`（将来替换高清图用新文件名同名覆盖）
+- **转速修正**：按报价单（客户确认报价单为准）：120CC→1300–6500、170CC→1100–6500、222CC 补 1200–6500
+- **询价流程改为 WhatsApp 优先**（客户要求，价格私聊谈）：询价页 = WhatsApp 主按钮（wa.me/message/6XD3Z2WOCRP4L1）+ Telegram + 邮箱直连；表单变成“消息生成器”——填完打开 WhatsApp 预填询价消息，**无任何后端**。之前设计的 Resend+Telegram 接口方案不再需要
+- **联系方式**（`src/config/site.ts` 的 `CONTACT`）：WhatsApp/Telegram 同号 +86 157 0518 6291，邮箱 fashe250598617@163.com
+- **首页板块**：关于我们（真实简介：十年摩托车发动机、2024 起供无人机、累计 6 万台+）+ 新增「服务与保障」（质保/交付/技术支持/定制，来自报价单，价格已剔除）；工厂产能/质量资质/应用场景/客户案例四个板块**按客户要求暂删**，资料齐了加回（i18n 标题 key 都保留着）
+- **部署**：GitHub Pages（`fx223a/fx223a.github.io`），GitHub Actions 自动构建（push 到 main 即部署，CI 里先跑占位自检），`site: 'https://fx223a.github.io'`，sitemap + robots.txt 已生效
+- Placeholder 组件与无 JS 成功页已删除（不再需要）
+
+**后续待办**：① 工厂/资质/应用/案例四板块等客户资料加回；② 自定义 `.com` 域名（换域名只改 `astro.config.mjs` 的 site + robots.txt 一行）；③ 波斯语上线（fa 翻译全部完成，加一行配置即生效，上线前先实测 RTL）；④ 高清产品图替换；⑤ 上线后用 Globalping 实测俄/乌/伊可达性。
 
 ## 1. 项目背景
 
