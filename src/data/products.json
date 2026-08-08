@@ -1,0 +1,289 @@
+[
+  {
+    "id": "zt-t120",
+    "model": "ZT-T120",
+    "image": "/images/products/zt-t120-2.jpg",
+    "images": [
+      "/images/products/zt-t120-1.jpg",
+      "/images/products/zt-t120-2.jpg",
+      "/images/products/zt-t120-3.jpg"
+    ],
+    "cooling": "air",
+    "cylinders": 2,
+    "features": [
+      "twin_cylinders",
+      "air_cooled",
+      "two_stroke",
+      "auto_cdi_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "11.22 hp / 8.25 kW" },
+      { "key": "static_thrust_100m", "value": "26.5 kg" },
+      { "key": "static_thrust_1800m", "value": "23.5 kg" },
+      { "key": "max_takeoff_weight", "value": "60 kg" },
+      { "key": "recommended_propeller", "value": "26*10; 26*12; 27*10; 28*10" },
+      { "key": "diameter_stroke", "value": "45 mm × 35 mm" },
+      { "key": "displacement", "value": "120 cc" },
+      { "key": "weight", "value": "3.05 kg" },
+      { "key": "crankshaft", "value": "specval_three_ball_bearings" },
+      { "key": "speed_range", "value": "1300–7500 rpm" },
+      { "key": "lubrication_ratio", "value": "25:1–30:1" },
+      { "key": "ignition_voltage", "value": "6.0–8.4 V DC" },
+      { "key": "generator", "value": "600 W" },
+      { "key": "fuel_consumption_carburetor", "value": "4.5 L/h" },
+      { "key": "fuel_consumption_efi", "value": "3.3 L/h" },
+      { "key": "dimensions", "value": "285 × 220 × 222 mm" }
+    ]
+  },
+  {
+    "id": "zt-t170",
+    "model": "ZT-T170",
+    "image": "/images/products/zt-t170-2.jpg",
+    "images": [
+      "/images/products/zt-t170-1.jpg",
+      "/images/products/zt-t170-2.jpg",
+      "/images/products/zt-t170-3.jpg"
+    ],
+    "cooling": "air",
+    "cylinders": 2,
+    "features": [
+      "twin_cylinders",
+      "air_cooled",
+      "two_stroke",
+      "auto_cdi_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "18.1 hp / 13.3 kW" },
+      { "key": "static_thrust_100m", "value": "35 kg" },
+      { "key": "static_thrust_1800m", "value": "31.5 kg" },
+      { "key": "max_takeoff_weight", "value": "80 kg" },
+      { "key": "recommended_propeller", "value": "30*12; 32*10" },
+      { "key": "diameter_stroke", "value": "51 mm × 41 mm" },
+      { "key": "displacement", "value": "170 cc" },
+      { "key": "weight", "value": "3.93 kg" },
+      { "key": "crankshaft", "value": "specval_three_bearing_crankshaft" },
+      { "key": "speed_range", "value": "1100–7500 rpm" },
+      { "key": "lubrication_ratio", "value": "50:1" },
+      { "key": "ignition_voltage", "value": "6–8.4 V DC" },
+      { "key": "generator", "value": "600 W" },
+      { "key": "fuel_consumption_carburetor", "value": "6 L/h" },
+      { "key": "fuel_consumption_efi", "value": "4.5 L/h" },
+      { "key": "dimensions", "value": "340 × 232 × 190 mm" }
+    ]
+  },
+  {
+    "id": "zt-t222",
+    "model": "ZT-T222",
+    "image": "/images/products/zt-t222-2.jpg",
+    "images": [
+      "/images/products/zt-t222-1.jpg",
+      "/images/products/zt-t222-2.jpg",
+      "/images/products/zt-t222-3.jpg"
+    ],
+    "cooling": "air",
+    "cylinders": 4,
+    "features": [
+      "four_cylinders",
+      "air_cooled",
+      "two_stroke",
+      "auto_cdi_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "20.9 hp / 15.3 kW" },
+      { "key": "idle_speed", "value": "1000 rpm" },
+      { "key": "static_thrust_100m", "value": "45 kg" },
+      { "key": "static_thrust_1800m", "value": "41 kg" },
+      { "key": "recommended_propeller", "value": "32*10; 32*12; 34*10" },
+      { "key": "spark_plug_model", "value": "NGK CM6" },
+      { "key": "displacement", "value": "222 cc" },
+      { "key": "diameter_stroke", "value": "45 mm × 35 mm" },
+      { "key": "compression_ratio", "value": "7.6:1" },
+      { "key": "lubrication_ratio", "value": "30:1" },
+      { "key": "main_machine_weight", "value": "4860 g" },
+      { "key": "exhaust_pipe_weight", "value": "470 g" },
+      { "key": "igniter_weight", "value": "380 g" },
+      { "key": "ignition_voltage", "value": "4.8–8.4 V" },
+      { "key": "fuel_consumption_carburetor", "value": "8.3 L/h" },
+      { "key": "fuel_consumption_efi", "value": "6.2 L/h" },
+      { "key": "dimensions", "value": "320 × 270 × 180 mm" }
+    ]
+  },
+  {
+    "id": "zt-t350",
+    "model": "ZT-T350",
+    "image": "/images/products/zt-t350-2.jpg",
+    "images": [
+      "/images/products/zt-t350-1.jpg",
+      "/images/products/zt-t350-2.jpg",
+      "/images/products/zt-t350-3.jpg"
+    ],
+    "cooling": "air",
+    "cylinders": 2,
+    "features": [
+      "twin_cylinders",
+      "air_cooled",
+      "two_stroke",
+      "dc_cdi_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "29.37 hp / 21.6 kW" },
+      { "key": "static_thrust_100m", "value": "47.5 kg" },
+      { "key": "static_thrust_1800m", "value": "43.5 kg" },
+      { "key": "max_takeoff_weight", "value": "150 kg" },
+      { "key": "recommended_propeller", "value": "D750*H760; 30*20" },
+      { "key": "diameter_stroke", "value": "65 mm × 50 mm" },
+      { "key": "displacement", "value": "350 cc" },
+      { "key": "weight", "value": "11.46 kg" },
+      { "key": "crankshaft", "value": "specval_high_strength_alloy_steel" },
+      { "key": "speed_range", "value": "2200–5600 rpm" },
+      { "key": "lubrication_ratio", "value": "20:1" },
+      { "key": "ignition", "value": "specval_dc_cdi_electronic_ignition" },
+      { "key": "carburetor_efi", "value": "specval_carb_allround_choke" },
+      { "key": "generator", "value": "800 W / 2000 W" },
+      { "key": "fuel_consumption_carburetor", "value": "10 L/h" },
+      { "key": "fuel_consumption_efi", "value": "7 L/h" },
+      { "key": "option", "value": "specval_option_starter_24v" },
+      { "key": "dimensions", "value": "360 × 310 × 330 mm" }
+    ]
+  },
+  {
+    "id": "zt-t350-w",
+    "model": "ZT-T350-W",
+    "image": "/images/products/zt-t350-w-2.jpg",
+    "images": [
+      "/images/products/zt-t350-w-1.jpg",
+      "/images/products/zt-t350-w-2.jpg",
+      "/images/products/zt-t350-w-3.jpg"
+    ],
+    "cooling": "water",
+    "cylinders": 2,
+    "features": [
+      "twin_cylinders",
+      "water_cooled",
+      "two_stroke",
+      "dc_cdi_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "29.37 hp / 21.6 kW" },
+      { "key": "static_thrust_100m", "value": "47.5 kg" },
+      { "key": "static_thrust_1800m", "value": "43.5 kg" },
+      { "key": "max_takeoff_weight", "value": "150 kg" },
+      { "key": "recommended_propeller", "value": "D750*H760; 30*20" },
+      { "key": "diameter_stroke", "value": "65 mm × 50 mm" },
+      { "key": "displacement", "value": "350 cc" },
+      { "key": "weight", "value": "11.46 kg" },
+      { "key": "crankshaft", "value": "specval_high_strength_alloy_steel" },
+      { "key": "speed_range", "value": "2200–5600 rpm" },
+      { "key": "lubrication_ratio", "value": "20:1" },
+      { "key": "ignition", "value": "specval_dc_cdi_electronic_ignition" },
+      { "key": "carburetor_efi", "value": "specval_carb_allround_choke" },
+      { "key": "generator", "value": "800 W / 2000 W" },
+      { "key": "fuel_consumption_carburetor", "value": "10 L/h" },
+      { "key": "fuel_consumption_efi", "value": "7 L/h" },
+      { "key": "option", "value": "specval_option_starter_24v" },
+      { "key": "dimensions", "value": "360 × 310 × 330 mm" }
+    ]
+  },
+  {
+    "id": "zt-t550",
+    "model": "ZT-T550",
+    "image": "/images/products/zt-t550-2.jpg",
+    "images": [
+      "/images/products/zt-t550-1.jpg",
+      "/images/products/zt-t550-2.jpg",
+      "/images/products/zt-t550-3.jpg"
+    ],
+    "cooling": "air",
+    "cylinders": 4,
+    "features": [
+      "four_cylinders",
+      "air_cooled",
+      "two_stroke",
+      "solid_state_magneto_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "49.62 hp / 37 kW" },
+      { "key": "static_thrust_100m", "value": "70 kg" },
+      { "key": "static_thrust_1800m", "value": "61.8 kg" },
+      { "key": "max_takeoff_weight", "value": "220 kg" },
+      { "key": "recommended_propeller", "value": "32*20; 30*23; 30*25" },
+      { "key": "diameter_stroke", "value": "66 mm × 40 mm" },
+      { "key": "displacement", "value": "550 cc" },
+      { "key": "weight", "value": "18.3 kg" },
+      { "key": "crankshaft", "value": "specval_forging_seven_piece" },
+      { "key": "speed_range", "value": "1300–7500 rpm" },
+      { "key": "lubrication_ratio", "value": "50:1" },
+      { "key": "ignition", "value": "specval_cdi_automatic_angle_ignition" },
+      { "key": "firing_order", "value": "specval_firing_opposed_500" },
+      { "key": "carburetor_efi", "value": "specval_carb_two_diaphragm" },
+      { "key": "generator", "value": "800 W / 2000 W" },
+      { "key": "piston", "value": "specval_piston_oval_alloy" },
+      { "key": "cylinder", "value": "specval_cylinder_alloy_ceramic" },
+      { "key": "engine_stroke", "value": "specval_two_stroke" },
+      { "key": "layout_form", "value": "specval_layout_h_opposed_4" },
+      { "key": "starter", "value": "specval_optional" },
+      { "key": "fuel_consumption_carburetor", "value": "14 L/h" },
+      { "key": "fuel_consumption_efi", "value": "10 L/h" },
+      { "key": "option", "value": "specval_option_exhaust_starter_generator" },
+      { "key": "dimensions", "value": "430 × 340 × 400 mm" }
+    ]
+  },
+  {
+    "id": "zt-t730",
+    "model": "ZT-T730",
+    "image": "/images/products/zt-t730-2.jpg",
+    "images": [
+      "/images/products/zt-t730-1.jpg",
+      "/images/products/zt-t730-2.jpg",
+      "/images/products/zt-t730-3.jpg"
+    ],
+    "cooling": "air",
+    "cylinders": 4,
+    "features": [
+      "four_cylinders",
+      "air_cooled",
+      "two_stroke",
+      "solid_state_magneto_ignition",
+      "mixture_lubrication",
+      "push_pull_devices"
+    ],
+    "specs": [
+      { "key": "power", "value": "63.5 hp / 47.3 kW" },
+      { "key": "static_thrust_100m", "value": "75 kg" },
+      { "key": "static_thrust_1800m", "value": "70 kg" },
+      { "key": "max_takeoff_weight", "value": "270 kg" },
+      { "key": "recommended_propeller", "value": "32*20; 30*23; 30*25" },
+      { "key": "diameter_stroke", "value": "66 mm × 54 mm" },
+      { "key": "displacement", "value": "730 cc" },
+      { "key": "weight", "value": "18.5 kg" },
+      { "key": "crankshaft", "value": "specval_forging_seven_piece" },
+      { "key": "speed_range", "value": "2000–7500 rpm" },
+      { "key": "lubrication_ratio", "value": "30:1" },
+      { "key": "ignition", "value": "specval_cdi_automatic_angle_ignition" },
+      { "key": "firing_order", "value": "specval_firing_opposed_500" },
+      { "key": "carburetor_efi", "value": "specval_carb_two_diaphragm" },
+      { "key": "generator", "value": "800 W / 2000 W" },
+      { "key": "piston", "value": "specval_piston_oval_alloy" },
+      { "key": "cylinder", "value": "specval_cylinder_alloy_ceramic" },
+      { "key": "engine_stroke", "value": "specval_two_stroke" },
+      { "key": "layout_form", "value": "specval_layout_h_opposed_4" },
+      { "key": "starter", "value": "specval_optional" },
+      { "key": "fuel_consumption_carburetor", "value": "17 L/h" },
+      { "key": "fuel_consumption_efi", "value": "12 L/h" },
+      { "key": "option", "value": "specval_option_exhaust_starter_generator" },
+      { "key": "dimensions", "value": "420 × 410 × 370 mm" }
+    ]
+  }
+]

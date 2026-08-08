@@ -1,0 +1,235 @@
+---
+// ============================================================
+// 首页（多语言）
+// 已按真实产品（二冲程航空发动机 120–730cc）重写，替换掉原 Astro 模板的占位文案。
+// 结构：Hero → 主力型号展示 → 为什么选择我们(真实产品优势) → 关于/工厂/资质/应用(占位) → 询价引导。
+// ★ 凡是需要客户提供的真实内容，都用 <Placeholder> 醒目黄色框标出，见 CONTENT-TODO.md。
+// ============================================================
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Placeholder from '../../components/Placeholder.astro';
+import { locales } from '../../i18n/config';
+import { useTranslations } from '../../i18n/utils';
+import products from '../../data/products.json';
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+
+// 【首页主推型号】默认取入门/中端/顶配三款代表整条产品线。
+// 想换主推型号，改这个 id 列表即可（对应 CONTENT-TODO I1，待客户确认）。
+const featuredIds = ['zt-t120', 'zt-t350', 'zt-t730'];
+const featured = featuredIds
+  .map((id) => products.find((p) => p.id === id))
+  .filter(Boolean) as typeof products;
+
+// 小帮手：按 key 取某型号的参数值
+function getSpec(product: { specs: { key: string; value: string }[] }, key: string) {
+  const found = product.specs.find((s) => s.key === key);
+  return found ? found.value : null;
+}
+---
+<BaseLayout title={t('nav_home')}>
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <h1>{t('home_hero_title')}</h1>
+    <p>{t('home_hero_subtitle')}</p>
+    <a class="btn" href={`/${lang}/products/`}>{t('home_hero_cta')}</a>
+  </section>
+
+  <!-- ===== 主力型号展示 ===== -->
+  <section class="home-section">
+    <h2>{t('home_featured_title')}</h2>
+    <p class="section-sub">{t('home_featured_subtitle')}</p>
+
+    <div class="featured-grid">
+      {featured.map((product) => (
+        <a class="featured-card" href={`/${lang}/products/${product.id}/`}>
+          <div class="featured-photo">
+            <img src={product.image} alt={`${product.model} — ${t('product_image_alt')}`} loading="lazy" />
+          </div>
+          <h3>{product.model}</h3>
+          <dl class="featured-specs">
+            <div><dt>{t('spec_power')}</dt><dd>{getSpec(product, 'power')}</dd></div>
+            <div><dt>{t('spec_displacement')}</dt><dd>{getSpec(product, 'displacement')}</dd></div>
+            <div><dt>{t('spec_static_thrust_100m')}</dt><dd>{getSpec(product, 'static_thrust_100m')}</dd></div>
+          </dl>
+        </a>
+      ))}
+    </div>
+
+    <a class="btn btn-outline" href={`/${lang}/products/`}>{t('home_view_all')} →</a>
+  </section>
+
+  <!-- ===== 为什么选择我们（真实产品优势，非占位）===== -->
+  <section class="home-section">
+    <h2>{t('home_why_title')}</h2>
+    <div class="strength-grid">
+      <div class="strength">
+        <h3>{t('home_strength_range_title')}</h3>
+        <p>{t('home_strength_range_text')}</p>
+      </div>
+      <div class="strength">
+        <h3>{t('home_strength_config_title')}</h3>
+        <p>{t('home_strength_config_text')}</p>
+      </div>
+      <div class="strength">
+        <h3>{t('home_strength_fuel_title')}</h3>
+        <p>{t('home_strength_fuel_text')}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 关于我们（占位）===== -->
+  <section class="home-section">
+    <h2>{t('home_about_title')}</h2>
+    <Placeholder note="公司简介，约80–120字（中·英·俄），见 CONTENT-TODO C1" />
+    <div class="ph-images">
+      <Placeholder note="公司/团队/门店照片 x1–2（横图 ≥1200px），CONTENT-TODO C2" />
+    </div>
+  </section>
+
+  <!-- ===== 工厂与产能（占位）===== -->
+  <section class="home-section">
+    <h2>{t('home_factory_title')}</h2>
+    <Placeholder note="工厂/产线介绍，约60–100字（中·英·俄），CONTENT-TODO D1" />
+    <div class="ph-images">
+      <Placeholder note="工厂照片 x3–6（车间/产线/测试台/装配，横图 ≥1200px），CONTENT-TODO D2" />
+    </div>
+  </section>
+
+  <!-- ===== 质量与资质（占位）===== -->
+  <section class="home-section">
+    <h2>{t('home_cert_title')}</h2>
+    <Placeholder note="真实拥有的认证/资质名称列表（如 ISO/CE/专利，只列真实的），CONTENT-TODO E1" />
+    <div class="ph-images">
+      <Placeholder note="证书扫描件/图片（每证1张），CONTENT-TODO E2" />
+    </div>
+  </section>
+
+  <!-- ===== 应用场景（占位）===== -->
+  <section class="home-section">
+    <h2>{t('home_applications_title')}</h2>
+    <Placeholder note="发动机实际用途（如无人机/动力伞/轻型飞行器，按真实客户填），CONTENT-TODO F1" />
+    <div class="ph-images">
+      <Placeholder note="应用实拍图 x2–4（装机/试飞等），CONTENT-TODO F2" />
+    </div>
+  </section>
+
+  <!-- ===== 询价引导 ===== -->
+  <section class="home-section home-cta">
+    <h2>{t('home_contact_title')}</h2>
+    <p class="section-sub">{t('home_contact_text')}</p>
+    <a class="btn" href={`/${lang}/inquiry/`}>{t('nav_inquiry')}</a>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 方向相关一律用逻辑属性，保证将来波斯语(RTL)自动镜像。 */
+  .home-section {
+    padding-block: 2.5rem;
+    border-block-start: 1px solid #eee;
+  }
+  .home-section > h2 {
+    margin-block: 0 0.5rem;
+  }
+  .section-sub {
+    color: #555;
+    margin-block: 0 1.5rem;
+  }
+
+  /* 占位图区：给多张占位一点排布空间 */
+  .ph-images {
+    margin-block-start: 0.75rem;
+  }
+
+  /* ===== 主力型号卡片 ===== */
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-block-end: 1.5rem;
+  }
+  .featured-card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #fff;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .featured-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+  .featured-photo {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-block-end: 0.75rem;
+  }
+  .featured-photo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .featured-card h3 {
+    margin-block: 0 0.6rem;
+    color: #b91c1c;
+  }
+  .featured-specs {
+    margin: 0;
+  }
+  .featured-specs > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-block: 0.25rem;
+    border-block-start: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+  }
+  .featured-specs dt { color: #666; }
+  .featured-specs dd { margin: 0; font-weight: 600; text-align: end; }
+
+  /* ===== 优势卡片 ===== */
+  .strength-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+  }
+  .strength {
+    padding: 1.1rem;
+    background: #fafafa;
+    border-radius: 10px;
+  }
+  .strength h3 {
+    margin-block: 0 0.4rem;
+    font-size: 1.05rem;
+  }
+  .strength p {
+    margin: 0;
+    color: #444;
+  }
+
+  /* ===== 次要按钮（描边）===== */
+  .btn-outline {
+    background: transparent;
+    color: #b91c1c;
+    border: 1px solid #b91c1c;
+  }
+  .btn-outline:hover {
+    background: #fef2f2;
+  }
+
+  .home-cta {
+    text-align: start;
+  }
+</style>

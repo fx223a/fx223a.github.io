@@ -1,0 +1,210 @@
+---
+// ============================================================
+// 产品详情页（多语言）
+// 网址：/ru/products/zt-t120/ 、/en/products/zt-t120/ 、/zh/products/zt-t120/ ...
+// 文件名 [id] 是“动态型号段”：Astro 会按 getStaticPaths 列出的 语言 × 型号 组合，
+// 用这一个文件生成所有型号的详情页。
+// 内容：3 张多角度图（点缩略图切换主图）+ 全部参数表 + 特性标签。
+// ============================================================
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { locales } from '../../../i18n/config';
+import { useTranslations } from '../../../i18n/utils';
+import products from '../../../data/products.json';
+
+// 为“每种语言 × 每个型号”各生成一个详情页，并把该型号数据通过 props 传进来。
+export function getStaticPaths() {
+  return locales.flatMap((lang) =>
+    products.map((product) => ({
+      params: { lang, id: product.id },
+      props: { product },
+    }))
+  );
+}
+
+const { lang } = Astro.params;
+const { product } = Astro.props;
+const t = useTranslations(lang);
+
+// 图片 alt 文字：型号名 + 翻译描述（走 i18n，随语言切换）
+const imgAlt = `${product.model} — ${t('product_image_alt')}`;
+// 主图默认用第 2 张（索引 1，即 -2）
+const mainImage = product.image;
+---
+<BaseLayout title={product.model}>
+  <!-- 返回列表的面包屑 -->
+  <p class="breadcrumb">
+    <a href={`/${lang}/products/`}>← {t('nav_products')}</a>
+  </p>
+
+  <h1 class="detail-title">{product.model}</h1>
+
+  <!-- 特性标签：把该型号 features 列表逐个翻译成徽章 -->
+  <div class="badges">
+    {product.features.map((f) => (
+      <span class="badge">{t('feature_' + f)}</span>
+    ))}
+  </div>
+
+  <!-- 询价按钮：跳到询价表单，并用 ?model= 带上当前型号，表单会自动选中它 -->
+  <a class="btn inquiry-cta" href={`/${lang}/inquiry/?model=${product.id}`}>
+    {t('nav_inquiry')}
+  </a>
+
+  <div class="detail-layout">
+    <!-- 左侧：图片画廊（大主图 + 3 张缩略图，点缩略图切换主图）-->
+    <div class="gallery">
+      <div class="gallery-main">
+        <img id="mainImage" src={mainImage} alt={imgAlt} />
+      </div>
+      <div class="gallery-thumbs">
+        {product.images.map((src) => (
+          <button
+            class={`thumb ${src === mainImage ? 'active' : ''}`}
+            data-src={src}
+            type="button"
+            aria-label={imgAlt}
+          >
+            <img src={src} alt={imgAlt} loading="lazy" />
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- 右侧：全部参数表 -->
+    <div class="spec-table-wrap">
+      <table class="spec-table">
+        <tbody>
+          {product.specs.map((s) => (
+            <tr>
+              <th scope="row">{t('spec_' + s.key)}</th>
+              {/* 值若是 specval_ 开头的 token（文字描述型）就走 i18n 翻译，否则原样显示（纯数字值） */}
+              <td>{s.value.startsWith('specval_') ? t(s.value) : s.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // 点击缩略图 → 切换大主图，并高亮当前缩略图
+  const main = document.getElementById('mainImage') as HTMLImageElement | null;
+  document.querySelectorAll<HTMLButtonElement>('.thumb').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const src = btn.dataset.src;
+      if (main && src) main.src = src;
+      document.querySelectorAll('.thumb').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+
+<style>
+  /* 说明：本页样式局部生效；方向相关一律用逻辑属性，保证将来波斯语(RTL)自动镜像。 */
+
+  .breadcrumb {
+    margin-block: 0 1rem;
+  }
+  .breadcrumb a {
+    color: #b91c1c;
+    text-decoration: none;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  .detail-title {
+    margin-block: 0 0.75rem;
+    color: #b91c1c;
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-block-end: 1.5rem;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: #f3f4f6;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    color: #374151;
+  }
+
+  /* 询价按钮（复用全局 .btn 红色样式），与下方参数区拉开间距 */
+  .inquiry-cta {
+    margin-block-end: 1.75rem;
+  }
+
+  /* 两栏布局：左图右参数；窄屏(手机)自动堆成单列 */
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 700px) {
+    .detail-layout { grid-template-columns: 1fr; }
+  }
+
+  /* ===== 图片画廊 ===== */
+  .gallery-main {
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 0.75rem;
+  }
+  .gallery-main img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .gallery-thumbs {
+    display: flex;
+    gap: 0.5rem;
+    margin-block-start: 0.75rem;
+  }
+  .thumb {
+    flex: 1;
+    height: 80px;
+    padding: 0.25rem;
+    background: #fafafa;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .thumb.active {
+    border-color: #b91c1c;  /* 当前选中的缩略图高亮 */
+  }
+
+  /* ===== 参数表 ===== */
+  .spec-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .spec-table th,
+  .spec-table td {
+    padding: 0.55rem 0.5rem;
+    border-block-end: 1px solid #eee;
+    text-align: start;          /* 逻辑属性：LTR 靠左、RTL 自动靠右 */
+    vertical-align: top;
+  }
+  .spec-table th {
+    color: #666;
+    font-weight: 500;
+    white-space: nowrap;
+    padding-inline-end: 1rem;
+  }
+  .spec-table td {
+    font-weight: 600;
+  }
+</style>

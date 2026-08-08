@@ -1,0 +1,44 @@
+---
+// ============================================================
+// 占位组件（Placeholder）
+// 用途：标记“需要客户提供真实内容”的地方，防止把占位当成真内容漏改。
+// ★ 硬规则：这里只写“待填说明”，绝不编造任何看起来像真的的信息。
+// 用法：<Placeholder note="公司简介，约80字（中·英·俄）" />
+//       或 <Placeholder note="工厂照片 x3–6" block />（block 时占满一行）
+// 所有占位处都对应 CONTENT-TODO.md 里的一条，上线前必须全部替换。
+// ============================================================
+interface Props {
+  note: string;   // 待填说明（写清楚要什么、多少字、几张图）
+}
+const { note } = Astro.props;
+---
+<span class="placeholder" role="note">
+  <span class="placeholder-tag">待填</span>
+  {note}
+</span>
+
+<style>
+  /* 醒目黄色样式：一眼能认出是待填内容 */
+  .placeholder {
+    display: inline-block;
+    background: #fef08a;                 /* 亮黄色背景 */
+    border: 2px dashed #ca8a04;          /* 黄褐色虚线边框 */
+    color: #713f12;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .placeholder-tag {
+    display: inline-block;
+    background: #ca8a04;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.05rem 0.4rem;
+    border-radius: 4px;
+    margin-inline-end: 0.45rem;         /* 逻辑属性，RTL 自动镜像 */
+    vertical-align: middle;
+  }
+</style>

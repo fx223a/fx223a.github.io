@@ -1,0 +1,137 @@
+/* ============================================================
+   全局基础样式（第一版）
+   ★ RTL 关键说明 ★
+   本文件所有“方向相关”的样式都使用“逻辑属性”，例如：
+     - 用 margin-inline-start 代替 margin-left
+     - 用 padding-inline 代替 padding-left / padding-right
+     - 用 border-block-end 代替 border-bottom
+   好处：当页面切换到从右到左(RTL，如波斯语)时，布局会自动左右镜像，
+   我们不需要为 RTL 再写一套样式。
+   ============================================================ */
+
+/* 一个很小的“重置”：让宽高计算更直观，去掉默认外边距 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+/* 主内容区域：限制最大宽度并水平居中 */
+.site-main {
+  max-width: 1000px;
+  margin-inline: auto;    /* 左右自动 = 居中（RTL 下同样有效） */
+  padding-inline: 1rem;   /* 左右内边距（逻辑属性，RTL 自动镜像） */
+  padding-block: 2rem;    /* 上下内边距 */
+}
+
+/* ===== 顶部导航栏 ===== */
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+  border-block-end: 1px solid #e5e5e5;  /* 底部分隔线（逻辑属性） */
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #b91c1c;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+.nav a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+.nav a:hover {
+  text-decoration: underline;
+}
+
+/* ===== 语言切换器 ===== */
+/* margin-inline-start: auto 会把它推到“行末”：
+   LTR（从左到右）下靠右，RTL（从右到左）下自动靠左。 */
+.lang-switcher {
+  margin-inline-start: auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.lang-switcher a {
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.lang-switcher a.active {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+/* ===== 页脚 ===== */
+.site-footer {
+  border-block-start: 1px solid #e5e5e5;  /* 顶部分隔线（逻辑属性） */
+  padding: 1.5rem 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* 页脚联系信息区：限制宽度居中；flex 纵向排布让每条占位单独一行 */
+.footer-contact {
+  max-width: 1000px;
+  margin-inline: auto;
+  margin-block-end: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: start;      /* 逻辑属性：LTR 靠左、RTL 自动靠右 */
+  gap: 0.4rem;
+}
+.footer-contact h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  color: #1a1a1a;
+}
+
+.footer-copy {
+  text-align: center;
+  margin: 0;
+}
+
+/* ===== 首页 hero 区块（示例样式） ===== */
+.hero {
+  padding-block: 2rem 3rem;
+}
+.hero h1 {
+  font-size: 2rem;
+  margin-block: 0 0.5rem;
+}
+.hero p {
+  font-size: 1.1rem;
+  color: #444;
+  margin-block: 0;
+}
+.btn {
+  display: inline-block;
+  margin-block-start: 1.25rem;
+  padding: 0.6rem 1.2rem;
+  background: #b91c1c;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.btn:hover {
+  background: #991b1b;
+}

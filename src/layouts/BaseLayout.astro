@@ -1,0 +1,58 @@
+---
+// ============================================================
+// 页面骨架布局(BaseLayout)
+// 所有页面都会“套”在这个骨架里，统一拥有：顶部导航、语言切换、页脚。
+// ★ RTL 关键：这里给 <html> 设置了 lang 和 dir，
+//   当语言是波斯语(fa)时 dir 会自动变成 "rtl"，整页从右到左镜像。
+// ============================================================
+import { dir } from '../i18n/config';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import LanguageSwitcher from '../components/LanguageSwitcher.astro';
+import Placeholder from '../components/Placeholder.astro';
+import '../styles/global.css';
+
+// 从网址识别当前语言，并准备好翻译函数 t
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+// 页面标题：由具体页面通过 <BaseLayout title="..."> 传进来（可不传）
+interface Props {
+  title?: string;
+}
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang={lang} dir={dir(lang)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title ? `${title} · ` : ''}{t('site_name')}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href={`/${lang}/`}>{t('site_name')}</a>
+      <nav class="nav">
+        <a href={`/${lang}/`}>{t('nav_home')}</a>
+        <a href={`/${lang}/products/`}>{t('nav_products')}</a>
+        <a href={`/${lang}/inquiry/`}>{t('nav_inquiry')}</a>
+      </nav>
+      <LanguageSwitcher />
+    </header>
+
+    <main class="site-main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <!-- 联系信息区（占位，见 CONTENT-TODO B）：全站页脚都显示，方便买家找到联系方式 -->
+      <div class="footer-contact">
+        <h3>{t('footer_contact_title')}</h3>
+        <Placeholder note="公司地址（中·英），CONTENT-TODO B1" />
+        <Placeholder note="电话 / WhatsApp（带国家区号），CONTENT-TODO B2" />
+        <Placeholder note="业务邮箱，CONTENT-TODO B3" />
+        <Placeholder note="即时通讯 WhatsApp / 微信 / Telegram，CONTENT-TODO B4" />
+      </div>
+      <p class="footer-copy">© {t('site_name')} — {t('footer_rights')}</p>
+    </footer>
+  </body>
+</html>

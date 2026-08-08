@@ -1,0 +1,170 @@
+---
+// ============================================================
+// 询价表单页（多语言）
+// 网址：/ru/inquiry/ 、/en/inquiry/ 、/zh/inquiry/
+// 字段：姓名、公司、邮箱、电话、感兴趣的型号(下拉，自动来自 products.json)、数量、留言
+// 说明：
+//  - 所有标签走 i18n，随语言切换。
+//  - 目前是“占位”版：提交后只弹出感谢提示，不真正发送邮件（后续接第三方表单服务）。
+//  - 支持从详情页带型号跳转：网址带 ?model=zt-t550 时，下拉会自动选中该型号（见页面底部脚本）。
+// ============================================================
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { locales } from '../../../i18n/config';
+import { useTranslations } from '../../../i18n/utils';
+import products from '../../../data/products.json';
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+---
+<BaseLayout title={t('inquiry_title')}>
+  <section class="inquiry">
+    <h1>{t('inquiry_title')}</h1>
+    <p class="inquiry-intro">{t('inquiry_intro')}</p>
+
+    <!-- 占位表单：不设置 action，提交由下方脚本拦截并显示感谢提示 -->
+    <form id="inquiryForm" class="inquiry-form" novalidate>
+      <div class="field">
+        <label for="name">{t('form_name')} *</label>
+        <input type="text" id="name" name="name" required />
+      </div>
+
+      <div class="field">
+        <label for="company">{t('form_company')}</label>
+        <input type="text" id="company" name="company" />
+      </div>
+
+      <div class="field">
+        <label for="email">{t('form_email')} *</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+
+      <div class="field">
+        <label for="phone">{t('form_phone')}</label>
+        <input type="tel" id="phone" name="phone" />
+      </div>
+
+      <div class="field">
+        <label for="model">{t('form_model')}</label>
+        <!-- 型号选项由 products.json 自动生成：value 用型号 id，显示用型号名 -->
+        <select id="model" name="model">
+          <option value="">{t('form_model_placeholder')}</option>
+          {products.map((p) => (
+            <option value={p.id}>{p.model}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="quantity">{t('form_quantity')}</label>
+        <input type="number" id="quantity" name="quantity" min="1" step="1" />
+      </div>
+
+      <div class="field field-full">
+        <label for="message">{t('form_message')}</label>
+        <textarea id="message" name="message" rows="4"></textarea>
+      </div>
+
+      <button type="submit" class="btn">{t('form_submit')}</button>
+    </form>
+
+    <!-- 提交成功后的占位提示（默认隐藏，脚本里显示）。文字走 i18n。 -->
+    <p id="formSuccess" class="form-success" hidden>{t('form_success')}</p>
+  </section>
+</BaseLayout>
+
+<script>
+  // 1) 若网址带 ?model=xxx（从详情页“询价”按钮跳来），自动选中对应型号。
+  const params = new URLSearchParams(window.location.search);
+  const wanted = params.get('model');
+  const select = document.getElementById('model') as HTMLSelectElement | null;
+  if (select && wanted) {
+    const opt = Array.from(select.options).find((o) => o.value === wanted);
+    if (opt) select.value = wanted;
+  }
+
+  // 2) 占位提交：拦截提交，不真正发邮件，只显示感谢提示。
+  const form = document.getElementById('inquiryForm') as HTMLFormElement | null;
+  const success = document.getElementById('formSuccess');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    form.hidden = true;
+    if (success) success.hidden = false;
+  });
+</script>
+
+<style>
+  /* 方向相关一律用逻辑属性，保证将来波斯语(RTL)自动镜像。 */
+  .inquiry-intro {
+    color: #555;
+    margin-block: 0 1.5rem;
+  }
+
+  /* 两列栅格；窄屏自动单列。留言框跨满整行。 */
+  .inquiry-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.25rem;
+    max-width: 640px;
+  }
+  @media (max-width: 560px) {
+    .inquiry-form { grid-template-columns: 1fr; }
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+  }
+  .field-full {
+    grid-column: 1 / -1;   /* 跨满整行 */
+  }
+  .field label {
+    font-size: 0.85rem;
+    color: #444;
+    margin-block-end: 0.3rem;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    font: inherit;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    color: #1a1a1a;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    outline: 2px solid #b91c1c;
+    outline-offset: 1px;
+    border-color: #b91c1c;
+  }
+  .field textarea {
+    resize: vertical;
+  }
+
+  /* 提交按钮复用全局 .btn 的红色样式；这里让它跨行并靠起始端对齐 */
+  .inquiry-form .btn {
+    grid-column: 1 / -1;
+    justify-self: start;
+    border: none;
+    cursor: pointer;
+    margin-block-start: 0.25rem;
+  }
+
+  .form-success {
+    padding: 1rem 1.25rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    color: #065f46;
+    max-width: 640px;
+  }
+</style>

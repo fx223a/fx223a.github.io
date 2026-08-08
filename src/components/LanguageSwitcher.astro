@@ -1,0 +1,27 @@
+---
+// ============================================================
+// 语言切换器组件
+// 显示所有“已启用语言”的链接，点击后跳到同一个页面的对应语言版本。
+// 例如你正在看 /en/products/，点“Русский”就会跳到 /ru/products/。
+// ============================================================
+import { locales, localeNames } from '../i18n/config';
+import { getLangFromUrl } from '../i18n/utils';
+
+// 当前语言（从网址识别）
+const currentLang = getLangFromUrl(Astro.url);
+
+// 计算“去掉语言前缀后”的当前路径，这样切换语言时能停在同一个页面。
+// 例：/en/products/ → 切掉 'en' → 剩下 'products'
+const segments = Astro.url.pathname.split('/').filter(Boolean); // 例如 ['en', 'products']
+segments.shift();                                               // 去掉第一段（语言代码）
+const restPath = segments.join('/');                            // 例如 'products'
+---
+<div class="lang-switcher">
+  {locales.map((loc) => (
+    <a
+      href={restPath ? `/${loc}/${restPath}/` : `/${loc}/`}
+      class={loc === currentLang ? 'active' : ''}
+      hreflang={loc}
+    >{localeNames[loc]}</a>
+  ))}
+</div>

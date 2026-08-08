@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npm run *)",
+      "Bash(rm -f /Users/bowenzheng/Documents/engine-site/src/pages/index.astro)",
+      "Bash(mkdir -p /Users/bowenzheng/Documents/engine-site/src/i18n /Users/bowenzheng/Documents/engine-site/src/layouts /Users/bowenzheng/Documents/engine-site/src/components /Users/bowenzheng/Documents/engine-site/src/styles \"/Users/bowenzheng/Documents/engine-site/src/pages/[lang]\")",
+      "Bash(curl -s http://localhost:4321/)",
+      "Bash(curl -s http://localhost:4321/ru/)",
+      "Bash(curl -s http://localhost:4321/en/)",
+      "Bash(curl -s -I http://localhost:4321/)",
+      "Bash(curl -s \"http://localhost:4321/en/\")",
+      "Bash(curl -s \"http://localhost:4321/fa/\")",
+      "Bash(mdls -name kMDItemNumberOfPages \"参数型号.pdf\")",
+      "Bash(mdls *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -m venv venv)",
+      "Bash(./venv/bin/pip install *)",
+      "Bash(curl -s \"http://localhost:4321/ru/products/\" -o /tmp/ru.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"http://localhost:4321/en/products/\" -o /tmp/en.html)",
+      "Bash($SP/venv/bin/python3 *)",
+      "Bash(/private/tmp/claude-501/-Users-bowenzheng-Documents-engine-site/e04bc651-c0fb-43c1-8df1-f5bb4d42246a/scratchpad/venv/bin/pip install *)",
+      "Bash(/private/tmp/claude-501/-Users-bowenzheng-Documents-engine-site/e04bc651-c0fb-43c1-8df1-f5bb4d42246a/scratchpad/venv/bin/python3 - /Users/bowenzheng/Documents/engine-site/public/images/products)",
+      "Bash(awk 'BEGIN{RS=\"</article>\"} /ZT-T222/{print; exit}' /tmp/zh.html)",
+      "Bash(curl -g -s 'http://localhost:4321/src/pages/[lang]/inquiry/index.astro?astro&type=script&index=0&lang.ts' -o /tmp/inqjs.txt)",
+      "Bash(sed 's/^/  ✓ /')",
+      "Bash(curl -g -s http://localhost:4321__TRACKED_VAR__ -o /tmp/djs.txt)"
+    ]
+  }
+}
