@@ -4,10 +4,10 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  // 网站正式地址（GitHub Pages，2026-08-08 上线）。
-  // 将来买了自定义域名（如 .com），把这里换成新域名即可——
-  // canonical、hreflang、Open Graph、sitemap 都会自动跟着更新。
-  site: 'https://fx223a.github.io',
+  // 网站正式域名（2026-08-08 客户购买 uavdroneengine.com）。
+  // canonical、hreflang、Open Graph、sitemap 都基于它生成。
+  // 旧地址 fx223a.github.io 会由 GitHub 自动 301 跳转到这里。
+  site: 'https://uavdroneengine.com',
 
   // 网站根地址（/）自动跳转到默认语言（俄语 ru）。
   // 如果将来想把默认语言改成英语，把下面的 '/ru/' 改成 '/en/' 即可
