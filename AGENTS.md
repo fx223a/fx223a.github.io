@@ -19,7 +19,7 @@
   2. `git add -A` → `git commit`（提交说明用中文）→ `git push origin main`
   3. GitHub Actions 自动构建发布（约 1–2 分钟）：`gh run list --limit 3` 看状态，或到仓库 Actions 页确认绿色
   4. 打开 https://uavdroneengine.com/ru/ 、/en/ 、/zh/ 、/fa/ 抽查；在 WhatsApp/Telegram 里发一个产品链接，确认分享卡片显示发动机大图
-- **⚠ 还没推送：`.github/workflows/deploy.yml` 新增的“多语言自检”一步**（本地已改好，故意没提交）。原因：这台 Windows 电脑上 git 借用 GitHub CLI（`gh`）的登录令牌推送，令牌缺 `workflow` 权限，GitHub 会拒绝**任何**改动工作流文件的推送。解决：用户在终端执行 `gh auth refresh -h github.com -s workflow`（浏览器里点授权）后，单独提交推送这个文件。**在此之前提交别用 `git add -A`**，改用 `git add -A -- . ':!.github/workflows/deploy.yml'`，否则整次 push 被拒（被拒不会损坏任何东西，只是推不上去）。
+- **推送权限**：这台 Windows 电脑上 git 借用 GitHub CLI（`gh`）的登录令牌推送，账号是 **fx223a**（网站仓库所有者）。2026-10-23 已给令牌补上 `workflow` 权限，可以推送对 `.github/workflows/` 的修改（缺这项权限时 GitHub 会拒绝任何改动工作流文件的推送）。注意：用户浏览器里常登录的是另一个账号 **BowenZg**（对仓库只有只读权限）。以后若要重新授权（`gh auth refresh -h github.com -s …` 设备码流程），先让用户在浏览器里切到 fx223a，否则会报 “received credentials for BowenZg”、授权不生效。
 - **这台电脑的 git 没配置提交者姓名/邮箱**（`git config user.name` 为空）：提交时用 `git -c user.name=… -c user.email=… commit`，填与历史提交相同的身份（`git log -1 --format='%an <%ae>'`）；或经用户同意后用 `git config --global` 配好。
 - 本地预览：`npm run dev` → http://localhost:4321
 - `package.json` 里的 `allowScripts` 字段是本次改版**之前**就存在的改动（npm 11 安装脚本白名单，列的是 esbuild；升级到 Vite 8 后依赖树里已没有 esbuild，此项目前不起作用，留着无害）

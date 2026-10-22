@@ -23,6 +23,8 @@ jobs:
         uses: actions/checkout@v4
       - name: 占位自检（上线红线）
         run: node scripts/check-placeholders.mjs
+      - name: 多语言自检（四种语言条目必须一致）
+        run: node scripts/check-i18n.mjs
       - name: Build Astro site
         uses: withastro/action@v3
         with:
