@@ -1,7 +1,7 @@
 # engine-site — UAV Drone Engine 官网
 
 二冲程航空发动机（120–730cc，无人机/轻型飞行器用）的多语言展示网站，含询价（WhatsApp 优先），不接支付、不放价格。
-目标市场：俄罗斯（默认语言）、乌克兰、伊朗。正式域名：https://uavdroneengine.com
+目标市场：俄罗斯、乌克兰、伊朗（网站默认语言：英语，2026-10-23 起）。正式域名：https://uavdroneengine.com
 
 ## 技术栈
 
@@ -9,7 +9,7 @@
 - 纯 CSS（无 Tailwind），深色设计系统见 `src/styles/global.css` 顶部变量；全程逻辑属性，支持波斯语 RTL
 - 字体自托管（`@fontsource-variable/*`：Manrope / JetBrains Mono / Vazirmatn），图标 `@lucide/astro`（构建时内联，无运行时 JS）
 - 产品数据：`src/data/products.json`（7 个型号）；解析工具 `src/lib/products.ts`
-- 多语言：ru（默认）/ en / zh / fa（RTL）
+- 多语言：en（默认）/ ru / zh / fa（RTL）；默认语言在 `src/i18n/config.ts` 的 `defaultLocale`
 
 ## 常用命令
 

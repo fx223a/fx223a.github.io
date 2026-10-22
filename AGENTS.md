@@ -30,6 +30,7 @@
 - **YT-222CC 补上最大起飞重量 110 kg**（用户提供；此前 PDF 资料里缺这一项）。已写入 `src/data/products.json`，首页对比图、产品对比表、222 详情页介绍和参数表自动更新；现在 7 款型号的最大起飞重量都有数据（60/80/110/150/150/220/270 kg）。
 - **新增销售人员**：Adalind，WhatsApp +86 177 0514 3104，邮箱 Chris.uavengine@gmail.com（用户原样提供）。数据在 `src/config/site.ts` 的 `SALES` 数组；显示在询价页（独立卡片 + 二维码）、全站页脚、详情页打印参数单、结构化数据（JSON-LD contactPoint）。以后加销售人员只需往数组里加一项。
 - **主号标注联系人 Allen**（用户的外贸名；用户确认主号 WhatsApp/Telegram +86 157 0518 6291 和邮箱 fashe250598617@163.com 就是他本人在用）。数据在 `src/config/site.ts` 的 `CONTACT.person`。询价页首张卡片（原“WhatsApp”主卡片）改成 Allen 的名片式卡片（保留主入口绿色强调，头像用 WhatsApp 绿以区分 Adalind 的红色头像——两人首字母都是 A），职位与 Adalind 相同（`sales_role`，中文“销售”），按钮“联系 Allen”；全站页脚、打印参数单、结构化数据同步标注；Telegram 卡片说明改为“与 Allen 的 WhatsApp 同一号码”。**刻意没放进 `SALES`**：同一号码再单独做一张卡片，页面上会重复出现。原主按钮文案 `inquiry_whatsapp_cta` 已无用处，四种语言一并删除。
+- **默认语言改为英语**（用户要求）：打开 https://uavdroneengine.com/ 自动进入 `/en/`（原为 `/ru/`）。原来 `astro.config.mjs` 的 redirects 跳转页标题是 “Redirecting to: /ru/”、没有分享图，在 WhatsApp 里发域名预览很难看；现改为 `src/pages/index.astro`：带英文标题/简介/分享大图，跳转保留 `?utm=…` 等参数，深色背景不闪白。hreflang x-default、404 页（英语排最前）同步跟随。俄语访客仍可在右上角切换，浏览器语言是俄语时页面左下角也会提示切换到俄语版。
 
 ### 当前全部真实信息（只能写这些，其它一律不写）
 - 公司：UAV Drone Engine；在中国从事无人机发动机制造十年，有多年发动机研发与制造经验；累计生产发动机超过 60 000 台
@@ -140,7 +141,8 @@
 
 ## 3. 多语言（i18n）
 
-- **已启用**：俄语 `ru`（默认）、英语 `en`、中文 `zh`、波斯语 `fa`（RTL，从右到左）。
+- **已启用**：英语 `en`（**默认**，2026-10-23 起；之前是俄语）、俄语 `ru`、中文 `zh`、波斯语 `fa`（RTL，从右到左）。
+- **默认语言**只改 `src/i18n/config.ts` 的 `defaultLocale`（+ `astro.config.mjs` 站点地图里的同名设置）。根地址 `/` 由 `src/pages/index.astro` 跳转（带分享卡片信息、保留网址参数），hreflang 的 x-default、404 页都自动跟随。
 - **新增文案时**：四个语言文件（`src/i18n/ru.ts`、`en.ts`、`zh.ts`、`fa.ts`）必须**同时**加同一个 key，`npm run check:i18n` 会检查；文案里的 `{model}` 这类占位变量要原样保留。
 - **RTL 布局**：波斯语是从右到左（RTL）。**布局从设计之初就必须支持 RTL**——写 CSS 时优先用逻辑属性（`margin-inline-start` 等）而不是写死 `left/right`，避免将来启用 `fa` 时布局错乱。
 - **关键文件**：

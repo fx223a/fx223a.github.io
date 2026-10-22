@@ -22,6 +22,8 @@ const messages: Record<string, { title: string; body: string; back: string; prod
 };
 
 const t = useTranslations(defaultLocale);
+// 默认语言排最前（网址里带语言段时，底部脚本会再把那种语言提到最前）
+const ordered = [defaultLocale, ...locales.filter((l) => l !== defaultLocale)];
 ---
 <!doctype html>
 <html lang={defaultLocale} dir={dir(defaultLocale)}>
@@ -42,7 +44,7 @@ const t = useTranslations(defaultLocale);
       </a>
       <p class="nf-code" aria-hidden="true">404</p>
       <div class="nf-list">
-        {locales.map((loc) => (
+        {ordered.map((loc) => (
           <section class="card nf-block" id={`nf-${loc}`} lang={loc} dir={dir(loc)}>
             <h2>{messages[loc].title}</h2>
             <p>{messages[loc].body}</p>

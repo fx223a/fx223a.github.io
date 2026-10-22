@@ -8,19 +8,20 @@
 export const locales = ['ru', 'en', 'zh', 'fa'] as const;
 
 // 【默认语言】用户访问网站根地址（例如 example.com）时，会自动跳转到这个语言。
-// 想改默认语言，改这里 + astro.config.mjs 里的跳转地址即可。
-export const defaultLocale = 'ru';
+// 2026-10-23 用户要求：由俄语(ru)改为英语(en)。
+// 想改默认语言：改这里，根地址跳转页（src/pages/index.astro）、hreflang 的 x-default、404 页都会自动跟随；
+// 另外把 astro.config.mjs 站点地图设置里的 defaultLocale 改成同一个值。
+export const defaultLocale = 'en';
 
 // 语言代码的类型（给编辑器做自动补全用，新手可以忽略这一行）
 export type Locale = (typeof locales)[number];
 
 // 【语言显示名称】在页面右上角“语言切换器”里显示的名字，用各语言自己的写法。
-// fa（波斯语）虽然还没启用，但名字先备好，将来启用时无需再加。
 export const localeNames: Record<string, string> = {
   ru: 'Русский',   // 俄语
   en: 'English',   // 英语
   zh: '中文',      // 中文
-  fa: 'فارسی',     // 波斯语（已预留，暂未启用）
+  fa: 'فارسی',     // 波斯语（2026-08-08 启用）
 };
 
 // 【从右到左(RTL)的语言列表】波斯语是从右到左排版的。

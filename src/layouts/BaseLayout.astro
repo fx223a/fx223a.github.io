@@ -119,7 +119,7 @@ const structured = [
     {siteOrigin && (
       <>
         {/* hreflang 互链：告诉搜索引擎各语言版本是“同一页面的不同语言”，避免被当成重复内容。
-            x-default 指向默认语言（俄语）版本。 */}
+            x-default 指向默认语言版本（2026-10-23 起为英语）。 */}
         {locales.map((loc) => (
           <link rel="alternate" hreflang={loc} href={`${siteOrigin}/${loc}/${pagePath}`} />
         ))}
@@ -158,8 +158,8 @@ const structured = [
 
     <Footer />
 
-    <!-- 语言建议：访客浏览器语言是本站支持的另一种语言时（如伊朗访客打开了俄语页），
-         右下角提示“本站有你的语言版本”。提示文字用目标语言自己写，访客一定看得懂；
+    <!-- 语言建议：访客浏览器语言是本站支持的另一种语言时（如俄罗斯访客打开了默认的英语页），
+         左下角提示“本站有你的语言版本”（波斯语页面镜像到右下角；另一角是 WhatsApp 悬浮按钮）。提示文字用目标语言自己写，访客一定看得懂；
          关掉后记住选择（site.ts），不会反复弹出。 -->
     <aside class="lang-suggest" data-lang-suggest hidden aria-label={t('language_label')}>
       <Globe class="lang-suggest-icon" aria-hidden="true" />
