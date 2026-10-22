@@ -283,9 +283,8 @@ export default {
   inquiry_eyebrow: 'Contact',
   inquiry_title: 'Request a quote',                  // 询价页大标题
   inquiry_intro: 'Pricing and details are discussed in chat — message us directly on WhatsApp or Telegram for the fastest reply.', // 询价页副标题（价格不放网站，客户要求）
-  inquiry_whatsapp_cta: 'Chat with us on WhatsApp',   // WhatsApp 主按钮
   channel_wa_desc: 'Fastest reply — prices and details in chat.',
-  channel_tg_desc: 'Same number as WhatsApp.',
+  channel_tg_desc: 'Same number as {name}’s WhatsApp.',  // Telegram 卡片说明，{name} 是主号联系人（Allen）
   channel_mail_desc: 'For detailed requests and documents.',
   channel_open: 'Open chat',
   channel_write: 'Write an email',

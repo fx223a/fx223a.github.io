@@ -281,9 +281,8 @@ export default {
   inquiry_eyebrow: 'تماس',
   inquiry_title: 'درخواست قیمت',                               // 询价页大标题
   inquiry_intro: 'قیمت و جزئیات در گفتگو مطرح می‌شود — برای سریع‌ترین پاسخ، مستقیم در واتس‌اپ یا تلگرام پیام دهید.', // 询价页副标题（价格不放网站，客户要求）
-  inquiry_whatsapp_cta: 'در واتس‌اپ با ما گفتگو کنید',          // WhatsApp 主按钮
   channel_wa_desc: 'سریع‌ترین پاسخ — قیمت و جزئیات در گفتگو.',
-  channel_tg_desc: 'همان شماره واتس‌اپ.',
+  channel_tg_desc: 'همان شماره واتس‌اپ {name}.',  // Telegram 卡片说明，{name} 是主号联系人（Allen）
   channel_mail_desc: 'برای درخواست‌های مفصل و مدارک.',
   channel_open: 'باز کردن گفتگو',
   channel_write: 'نوشتن ایمیل',

@@ -6,6 +6,10 @@
 
 // 公司主联系方式（客户 2026-08-08 提供）
 export const CONTACT = {
+  // 主号联系人：用户的外贸名（2026-10-23 用户确认：主号 WhatsApp/Telegram 和邮箱就是 Allen 本人在用）。
+  // 显示位置：询价页首张卡片（即主号 WhatsApp 卡片）、全站页脚、详情页打印参数单、结构化数据。
+  // 不放进下面的 SALES：同一号码若再单独做一张卡片，页面上会重复出现。
+  person: 'Allen',
   // WhatsApp 官方私聊短链（客户提供）
   whatsappLink: 'https://wa.me/message/6XD3Z2WOCRP4L1',
   // 展示用号码（WhatsApp 与 Telegram 同号）
@@ -19,8 +23,8 @@ export const CONTACT = {
 };
 
 // 销售人员（2026-10-23 用户提供）。只有 WhatsApp 和邮箱，没有 Telegram。
-// 显示位置：询价页“销售人员”卡片（带二维码）、全站页脚、详情页打印参数单、结构化数据。
-// 以后加销售人员：在数组里照格式再加一项即可。
+// 显示位置：询价页“销售人员”卡片（带二维码，排在 Allen 的主号卡片之后）、全站页脚、详情页打印参数单、结构化数据。
+// 以后加销售人员（有自己的号码）：在数组里照格式再加一项即可。
 export const SALES = [
   {
     name: 'Adalind',

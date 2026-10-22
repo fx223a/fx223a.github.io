@@ -282,9 +282,8 @@ export default {
   inquiry_eyebrow: '联系我们',
   inquiry_title: '询价',                             // 询价页大标题
   inquiry_intro: '价格与详情私聊洽谈——直接在 WhatsApp 或 Telegram 上联系我们，回复最快。', // 询价页副标题（价格不放网站，客户要求）
-  inquiry_whatsapp_cta: '在 WhatsApp 上联系我们',      // WhatsApp 主按钮
   channel_wa_desc: '回复最快——价格与细节在聊天中沟通。',
-  channel_tg_desc: '与 WhatsApp 同一号码。',
+  channel_tg_desc: '与 {name} 的 WhatsApp 同一号码。',  // Telegram 卡片说明，{name} 是主号联系人（Allen）
   channel_mail_desc: '适合详细需求和文件往来。',
   channel_open: '打开聊天',
   channel_write: '写邮件',

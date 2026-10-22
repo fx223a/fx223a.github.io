@@ -2,7 +2,7 @@
 // ============================================================
 // 询价页（多语言）—— WhatsApp 优先（客户 2026-08-08 决定：价格不上网站，私聊谈）
 // 网址：/ru/inquiry/ 、/en/inquiry/ 、/zh/inquiry/ 、/fa/inquiry/
-// 左侧：三种直连方式（WhatsApp / Telegram / 邮箱），电脑端带二维码，手机一扫即聊
+// 左侧：直连卡片——Allen（公司主号 WhatsApp）→ 销售 Adalind → Telegram → 邮箱，电脑端带二维码，手机一扫即聊
 // 右侧：“询价消息生成器”——填完表单，实时预览消息，可一键发到 WhatsApp、用邮件发送或复制文本。
 //  - 无任何后端：消息只在访客自己的设备上生成，不经过我们的服务器。
 //  - 无 JS 时表单整体隐藏，直连按钮始终可用——绝不会出现“提交了却没人收到”。
@@ -60,23 +60,34 @@ const jsonLd = [
     <div class="container inquiry-grid">
       <!-- ===== 左：直连通道（主入口，无 JS 也可用）===== -->
       <div class="channels">
+        <!-- 主号 = Allen（2026-10-23 用户确认）：首张卡片就是 Allen 的 WhatsApp，保留主入口的绿色强调 -->
         <article class="card channel channel--wa" data-reveal>
           <div class="channel-main">
             <div class="channel-head">
-              <span class="channel-icon channel-icon--wa"><BrandIcon name="whatsapp" /></span>
+              <span class="channel-icon channel-icon--person" aria-hidden="true">{CONTACT.person.charAt(0)}</span>
               <div>
-                <h2>WhatsApp</h2>
-                <p class="channel-id">{CONTACT.phoneDisplay}</p>
+                <h2>{CONTACT.person}</h2>
+                <p class="channel-role">{t('sales_role')}</p>
               </div>
             </div>
             <p class="channel-desc">{t('channel_wa_desc')}</p>
+            <ul class="channel-lines">
+              <li>
+                <BrandIcon name="whatsapp" size={18} />
+                <a class="channel-id" href={CONTACT.whatsappLink} target="_blank" rel="noopener">{CONTACT.phoneDisplay}</a>
+              </li>
+              <li>
+                <Mail aria-hidden="true" />
+                <a class="channel-id" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+              </li>
+            </ul>
             <a class="btn btn--wa" href={CONTACT.whatsappLink} target="_blank" rel="noopener">
               <BrandIcon name="whatsapp" />
-              {t('inquiry_whatsapp_cta')}
+              {t('sales_chat', { name: CONTACT.person })}
             </a>
           </div>
           <div class="channel-qr">
-            <QrCode value={CONTACT.whatsappLink} label={`WhatsApp — ${t('channel_scan')}`} />
+            <QrCode value={CONTACT.whatsappLink} label={`${CONTACT.person} · WhatsApp — ${t('channel_scan')}`} />
             <span>{t('channel_scan')}</span>
           </div>
         </article>
@@ -124,7 +135,7 @@ const jsonLd = [
                 <p class="channel-id">{CONTACT.phoneDisplay}</p>
               </div>
             </div>
-            <p class="channel-desc">{t('channel_tg_desc')}</p>
+            <p class="channel-desc">{t('channel_tg_desc', { name: CONTACT.person })}</p>
             <a class="btn btn--ghost" href={CONTACT.telegramLink} target="_blank" rel="noopener">
               <BrandIcon name="telegram" />
               {t('channel_open')}
@@ -405,6 +416,12 @@ const jsonLd = [
     font-size: 1.2rem;
     font-weight: 800;
     color: #fff;
+  }
+  /* 主号联系人（Allen）的头像用 WhatsApp 绿：和主卡片的绿色强调一致，也和 Adalind 的红色头像区分开（两人首字母都是 A） */
+  .channel--wa .channel-icon--person {
+    border-color: transparent;
+    background: var(--wa);
+    color: var(--wa-ink);
   }
   .channel-role {
     font-size: 0.82rem;

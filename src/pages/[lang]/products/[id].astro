@@ -471,8 +471,7 @@ const keySpecs = [
   <!-- 打印时才显示：联系方式 -->
   <div class="print-only print-contact container">
     <strong>{t('print_contact')}</strong>
-    <span>WhatsApp / Telegram: {CONTACT.phoneDisplay}</span>
-    <span>Email: {CONTACT.email}</span>
+    <span>{CONTACT.person} ({t('sales_role')}) — WhatsApp / Telegram: {CONTACT.phoneDisplay} · Email: {CONTACT.email}</span>
     {SALES.map((s) => (
       <span>{s.name} ({t('sales_role')}) — WhatsApp: {s.phoneDisplay} · Email: {s.email}</span>
     ))}

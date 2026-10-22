@@ -280,9 +280,8 @@ export default {
   inquiry_eyebrow: 'Контакты',
   inquiry_title: 'Запрос цены',                              // 询价页大标题
   inquiry_intro: 'Цены и детали обсуждаем в переписке — напишите нам напрямую в WhatsApp или Telegram, так быстрее всего.', // 询价页副标题（价格不放网站，客户要求）
-  inquiry_whatsapp_cta: 'Написать нам в WhatsApp',           // WhatsApp 主按钮
   channel_wa_desc: 'Самый быстрый ответ — цены и детали в переписке.',
-  channel_tg_desc: 'Тот же номер, что и в WhatsApp.',
+  channel_tg_desc: 'Тот же номер, что и у {name} в WhatsApp.',  // Telegram 卡片说明，{name} 是主号联系人（Allen）
   channel_mail_desc: 'Для подробных запросов и документов.',
   channel_open: 'Открыть чат',
   channel_write: 'Написать письмо',
