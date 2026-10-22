@@ -1,0 +1,115 @@
+---
+// ============================================================
+// 页脚：品牌简介 / 全部型号 / 站内导航 / 联系方式 + 语言 + 回到顶部
+// 联系方式是真实信息（客户 2026-08-08 提供），统一从 src/config/site.ts 读取。
+// ============================================================
+import Mail from '@lucide/astro/icons/mail';
+import ArrowUp from '@lucide/astro/icons/arrow-up';
+import Logo from './Logo.astro';
+import BrandIcon from './BrandIcon.astro';
+import { locales, localeNames } from '../i18n/config';
+import { getLangFromUrl, useTranslations, localizedPath } from '../i18n/utils';
+import { products } from '../lib/products';
+import { CONTACT, SALES } from '../config/site';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const home = `/${lang}/`;
+const year = new Date().getFullYear();
+
+const links = [
+  { href: home, label: t('nav_home') },
+  { href: `/${lang}/products/`, label: t('nav_products') },
+  { href: `${home}#about`, label: t('nav_about') },
+  { href: `${home}#service`, label: t('nav_service') },
+  { href: `${home}#faq`, label: t('nav_faq') },
+  { href: `/${lang}/inquiry/`, label: t('nav_inquiry') },
+];
+---
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="logo" href={home} aria-label={t('site_name')}>
+          <Logo id="logo-footer" />
+        </a>
+        <p>{t('footer_about')}</p>
+      </div>
+
+      <nav aria-labelledby="footer-engines">
+        <p class="footer-title" id="footer-engines">{t('footer_engines')}</p>
+        <ul class="footer-links">
+          {products.map((p) => (
+            <li><a class="mono" href={`/${lang}/products/${p.id}/`}>{p.model}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <nav aria-labelledby="footer-company">
+        <p class="footer-title" id="footer-company">{t('footer_company')}</p>
+        <ul class="footer-links">
+          {links.map((l) => (
+            <li><a href={l.href}>{l.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <div>
+        <p class="footer-title">{t('footer_contact_title')}</p>
+        <ul class="footer-links footer-contact">
+          <li>
+            <a href={CONTACT.whatsappLink} target="_blank" rel="noopener">
+              <BrandIcon name="whatsapp" size={18} />
+              <span>WhatsApp · <span class="ltr">{CONTACT.phoneDisplay}</span></span>
+            </a>
+          </li>
+          <li>
+            <a href={CONTACT.telegramLink} target="_blank" rel="noopener">
+              <BrandIcon name="telegram" size={18} />
+              <span>Telegram · <span class="ltr">{CONTACT.phoneDisplay}</span></span>
+            </a>
+          </li>
+          <li>
+            <a href={`mailto:${CONTACT.email}`}>
+              <Mail aria-hidden="true" />
+              <span class="ltr">{CONTACT.email}</span>
+            </a>
+          </li>
+        </ul>
+        <!-- 销售人员（2026-10-23 新增，数据在 src/config/site.ts 的 SALES） -->
+        {SALES.map((s) => (
+          <div class="footer-person">
+            <p class="footer-person-name">{s.name} · {t('sales_role')}</p>
+            <ul class="footer-links footer-contact">
+              <li>
+                <a href={s.whatsappLink} target="_blank" rel="noopener">
+                  <BrandIcon name="whatsapp" size={18} />
+                  <span>WhatsApp · <span class="ltr">{s.phoneDisplay}</span></span>
+                </a>
+              </li>
+              <li>
+                <a href={`mailto:${s.email}`}>
+                  <Mail aria-hidden="true" />
+                  <span class="ltr">{s.email}</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© {year} {t('site_name')} — {t('site_tagline')}. {t('footer_rights')}</p>
+      <nav class="footer-langs" aria-label={t('language_label')}>
+        {locales.map((loc) => (
+          <a href={localizedPath(Astro.url, loc)} hreflang={loc} lang={loc} aria-current={loc === lang ? 'true' : undefined}>{localeNames[loc]}</a>
+        ))}
+      </nav>
+      <a class="to-top" href="#top">
+        {t('back_to_top')}
+        <ArrowUp aria-hidden="true" />
+      </a>
+    </div>
+  </div>
+</footer>

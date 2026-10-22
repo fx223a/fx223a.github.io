@@ -1,13 +1,17 @@
 ---
 // ============================================================
 // 产品列表页（多语言）
-// 网址：/ru/products/ 、/en/products/（将来启用 fa 会自动多生成 /fa/products/）
-// 作用：把 src/data/products.json 里的 7 个型号，用卡片网格列出来。
+// 网址：/ru/products/、/en/products/、/zh/products/、/fa/products/
+// 内容：页面标题区（全系范围数字）→ 筛选/排序 + 产品卡片 → 全系参数对比表 → 询价横幅
+// 筛选/排序需要 JS；不开 JS 时直接显示全部型号（工具栏隐藏）。
 // ============================================================
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SectionHead from '../../../components/SectionHead.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import CtaBand from '../../../components/CtaBand.astro';
 import { locales } from '../../../i18n/config';
-import { useTranslations, localizeSpecValue } from '../../../i18n/utils';
-import products from '../../../data/products.json';
+import { useTranslations, localizeSpecValue, formatNumber, formatStat, localizeUnit } from '../../../i18n/utils';
+import { products, cutout, specValue, lineupStats, type Product } from '../../../lib/products';
 
 // 为每一种“已启用语言”各生成一个产品列表页
 export function getStaticPaths() {
@@ -16,175 +20,485 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
+const u = (unit: string) => localizeUnit(unit, lang);
+const n = (v: number) => formatNumber(v, lang);
+const stats = lineupStats();
+const home = `/${lang}/`;
+const site = Astro.site?.origin ?? '';
 
-// 卡片上重点显示的参数（按此顺序）。某型号若没有这一项，就自动跳过不显示。
-// 想调整卡片显示哪些参数，改这个数组即可。
-const highlightKeys = [
-  'power',               // 功率
-  'displacement',        // 排量
-  'static_thrust_100m',  // 拉力（海拔 100 米）
-  'static_thrust_1800m', // 拉力（海拔 1800 米）—— 高原数据，对俄罗斯/伊朗客户重要
-  'max_takeoff_weight',  // 最大起飞重量
-  'dimensions',          // 尺寸
+// 参数原文 → 显示文字（specval_ 开头的走翻译，数值做单位本地化）
+const show = (p: Product, key: string) => {
+  const v = specValue(p, key);
+  if (!v) return null;
+  return v.startsWith('specval_') ? t(v) : localizeSpecValue(v, lang);
+};
+const ignitionFeature = (p: Product) => p.features.find((f) => f.endsWith('_ignition'));
+
+// 对比表的行：每行一个参数，每列一个型号
+const compareRows: { label: string; cell: (p: Product) => string | null; note?: (p: Product) => string | null; wrap?: boolean }[] = [
+  { label: t('compare_cylinders'), cell: (p) => String(p.cylinders) },
+  { label: t('compare_cooling'), cell: (p) => (p.cooling === 'water' ? t('feature_water_cooled') : t('feature_air_cooled')) },
+  { label: t('spec_power'), cell: (p) => show(p, 'power') },
+  { label: t('spec_static_thrust_100m'), cell: (p) => show(p, 'static_thrust_100m') },
+  { label: t('spec_static_thrust_1800m'), cell: (p) => show(p, 'static_thrust_1800m') },
+  { label: t('spec_max_takeoff_weight'), cell: (p) => show(p, 'max_takeoff_weight') },
+  { label: t('spec_displacement'), cell: (p) => show(p, 'displacement') },
+  { label: t('spec_diameter_stroke'), cell: (p) => show(p, 'diameter_stroke') },
+  {
+    label: t('spec_weight'),
+    cell: (p) => show(p, 'weight') ?? show(p, 'main_machine_weight'),
+    note: (p) => (specValue(p, 'weight') ? null : t('spec_main_machine_weight')),
+  },
+  { label: t('spec_speed_range'), cell: (p) => show(p, 'speed_range') },
+  { label: t('spec_lubrication_ratio'), cell: (p) => show(p, 'lubrication_ratio') },
+  { label: t('spec_fuel_consumption_carburetor'), cell: (p) => show(p, 'fuel_consumption_carburetor') },
+  { label: t('spec_fuel_consumption_efi'), cell: (p) => show(p, 'fuel_consumption_efi') },
+  { label: t('spec_ignition'), cell: (p) => (ignitionFeature(p) ? t('feature_' + ignitionFeature(p)) : null), wrap: true },
+  { label: t('spec_recommended_propeller'), cell: (p) => show(p, 'recommended_propeller') },
+  { label: t('spec_dimensions'), cell: (p) => show(p, 'dimensions') },
 ];
 
-// 小帮手：在某型号的参数里，按 key 找出对应的数值；找不到返回 null。
-function getSpec(product: { specs: { key: string; value: string }[] }, key: string) {
-  const found = product.specs.find((s) => s.key === key);
-  return found ? found.value : null;
-}
+// 结构化数据：面包屑 + 产品列表（帮助搜索引擎理解页面）
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: t('nav_home'), item: `${site}${home}` },
+      { '@type': 'ListItem', position: 2, name: t('nav_products'), item: `${site}/${lang}/products/` },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${site}/${lang}/products/${p.id}/`,
+      name: p.model,
+    })),
+  },
+];
 ---
-<BaseLayout title={t('nav_products')}>
-  <section>
-    <h1>{t('products_title')}</h1>
-    <p class="products-intro">{t('products_intro')}</p>
-
-    <!-- 产品卡片网格：每个型号一张卡片 -->
-    <div class="product-grid">
-      {products.map((product, i) => (
-        <a class="product-card" href={`/${lang}/products/${product.id}/`}>
-          <!-- 主图：固定高度容器 + object-fit: contain，保证每张卡图片高度一致、不变形、不裁切。
-               alt 文字 = 型号名 + 翻译描述（走 i18n，随语言切换）。
-               前 3 张在首屏内用 eager 立即加载（lazy 会拖慢首屏 LCP），其余按需加载。 -->
-          <div class="product-photo">
-            <img
-              src={product.image}
-              alt={`${product.model} — ${t('product_image_alt')}`}
-              loading={i < 3 ? 'eager' : 'lazy'}
-              decoding="async"
-            />
+<BaseLayout title={t('nav_products')} description={t('products_intro')} ogImage="/og/products.jpg" jsonLd={jsonLd}>
+  <!-- ===== 页面标题区 ===== -->
+  <section class="page-hero" aria-labelledby="products-title">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href={home}>{t('nav_home')}</a></li>
+          <li><span aria-current="page">{t('nav_products')}</span></li>
+        </ol>
+      </nav>
+      <div class="ph-grid">
+        <div>
+          <p class="eyebrow" style="margin-block-start:2rem">{t('products_eyebrow')}</p>
+          <h1 class="page-title text-steel" id="products-title">{t('products_title')}</h1>
+          <p class="page-lead">{t('products_intro')}</p>
+        </div>
+        <!-- 全系范围（由 products.json 自动计算） -->
+        <dl class="range-stats">
+          <div>
+            <dt>{t('products_stat_models')}</dt>
+            <dd>{formatStat(stats.count, lang)}</dd>
           </div>
-
-          <h2 class="product-model">{product.model}</h2>
-
-          <!-- 亮点徽章：冷却方式 + 缸数（文字随语言自动切换）-->
-          <div class="badges">
-            <span class="badge">
-              {product.cooling === 'water' ? t('feature_water_cooled') : t('feature_air_cooled')}
-            </span>
-            <span class="badge">{product.cylinders} {t('label_cylinders')}</span>
+          <div>
+            <dt>{t('products_stat_cc')}</dt>
+            <dd><bdi>{n(stats.cc[0])}–{n(stats.cc[1])}</bdi> <small>{u('cc')}</small></dd>
           </div>
-
-          <!-- 重点参数列表：只显示 highlightKeys 里、且该型号存在的项 -->
-          <dl class="spec-list">
-            {highlightKeys.map((key) => {
-              const value = getSpec(product, key);
-              return value ? (
-                <div class="spec-row">
-                  <dt>{t('spec_' + key)}</dt>
-                  {/* specval_ token 走 i18n 翻译；数值经单位本地化；<bdi> 防止 RTL 下拉丁数值排乱 */}
-                  <dd><bdi>{value.startsWith('specval_') ? t(value) : localizeSpecValue(value, lang)}</bdi></dd>
-                </div>
-              ) : null;
-            })}
-          </dl>
-
-          <!-- 查看详情提示（整张卡片可点击进入详情页）-->
-          <!-- 箭头字符是有方向的，RTL（波斯语）下需要镜像；.dir-arrow 的翻转规则在 global.css -->
-          <span class="view-details">{t('view_details')} <span class="dir-arrow" aria-hidden="true">→</span></span>
-        </a>
-      ))}
+          <div>
+            <dt>{t('products_stat_power')}</dt>
+            <dd><bdi>{n(stats.kw[0])}–{n(stats.kw[1])}</bdi> <small>{u('kW')}</small></dd>
+          </div>
+          <div>
+            <dt>{t('products_stat_thrust')}</dt>
+            <dd><bdi>{n(stats.thrust[0])}–{n(stats.thrust[1])}</bdi> <small>{u('kg')}</small></dd>
+          </div>
+        </dl>
+      </div>
     </div>
   </section>
+
+  <!-- ===== 筛选 / 排序 + 产品卡片 ===== -->
+  <section class="section list-section" id="list">
+    <div class="container">
+      <div class="toolbar" data-toolbar>
+        <div class="seg" role="group" aria-label={t('filter_label')}>
+          <button type="button" data-filter="all" aria-pressed="true">{t('filter_all')}</button>
+          <button type="button" data-filter="cyl:2" aria-pressed="false">{t('filter_twin')}</button>
+          <button type="button" data-filter="cyl:4" aria-pressed="false">{t('filter_four')}</button>
+          <button type="button" data-filter="cool:air" aria-pressed="false">{t('filter_air')}</button>
+          <button type="button" data-filter="cool:water" aria-pressed="false">{t('filter_water')}</button>
+        </div>
+        <div class="toolbar-end">
+          <p class="results" data-results data-template={t('results_count')} aria-live="polite"></p>
+          <label class="sort">
+            <span>{t('sort_label')}</span>
+            <select data-sort>
+              <option value="cc">{t('sort_cc')}</option>
+              <option value="kw">{t('sort_power')}</option>
+              <option value="thrust">{t('sort_thrust')}</option>
+              <option value="weight">{t('sort_weight')}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="product-grid" data-grid>
+        {products.map((p, i) => (
+          <ProductCard product={p} lang={lang} level="h2" eager={i < 3} i={i} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 全系参数对比表 ===== -->
+  <section class="section section--alt section--line" id="compare" aria-labelledby="compare-title">
+    <div class="container">
+      <SectionHead eyebrow={t('compare_eyebrow')} title={t('compare_title')} desc={t('compare_desc')} id="compare-title" />
+      <p class="scroll-hint">{t('compare_scroll_hint')} <span class="dir-arrow" aria-hidden="true">→</span></p>
+      <div class="compare-wrap card" data-reveal tabindex="0" role="region" aria-label={t('compare_scroll_hint')}>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th scope="col" class="compare-corner">{t('compare_model')}</th>
+              {products.map((p) => (
+                <th scope="col">
+                  <a href={`/${lang}/products/${p.id}/`}>
+                    <img src={cutout(p.image, 'sm')} alt="" width="96" height="72" loading="lazy" decoding="async" />
+                    <span>{p.model}</span>
+                  </a>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {compareRows.map((row) => (
+              <tr class:list={{ wrap: row.wrap }}>
+                <th scope="row">{row.label}</th>
+                {products.map((p) => {
+                  const v = row.cell(p);
+                  const note = row.note?.(p);
+                  return (
+                    <td>
+                      {v ? <bdi>{v}</bdi> : <span class="na">—</span>}
+                      {note && <small>{note}</small>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand />
 </BaseLayout>
 
+<script>
+  // ============================================================
+  // 产品页：筛选（缸数 / 冷却方式）+ 排序（排量 / 功率 / 推力 / 重量）
+  // 支持 View Transitions 的浏览器里，卡片重新排列时会平滑移动。
+  // ============================================================
+  const grid = document.querySelector<HTMLElement>('[data-grid]');
+  const toolbar = document.querySelector<HTMLElement>('[data-toolbar]');
+  const results = document.querySelector<HTMLElement>('[data-results]');
+  const sortSelect = document.querySelector<HTMLSelectElement>('[data-sort]');
+
+  if (grid && toolbar) {
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.pcard'));
+    cards.forEach((c, i) => (c.style.viewTransitionName = `pcard-${i}`));
+    let filter = 'all';
+    let sort = 'cc';
+
+    const matches = (card: HTMLElement) => {
+      if (filter === 'all') return true;
+      const [key, value] = filter.split(':');
+      return card.dataset[key] === value;
+    };
+
+    const apply = () => {
+      const visible = cards.filter(matches);
+      cards.forEach((c) => (c.hidden = !visible.includes(c)));
+      // 排量、重量：从小到大；功率、推力：从大到小
+      const dir = sort === 'cc' || sort === 'weight' ? 1 : -1;
+      [...visible]
+        .sort((a, b) => (Number(a.dataset[sort]) - Number(b.dataset[sort])) * dir)
+        .forEach((c) => grid.appendChild(c));
+      cards.filter((c) => c.hidden).forEach((c) => grid.appendChild(c));
+      if (results) {
+        results.textContent = (results.dataset.template ?? '')
+          .replace('{n}', String(visible.length))
+          .replace('{total}', String(cards.length));
+      }
+    };
+
+    const run = () => {
+      const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+      if (doc.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        doc.startViewTransition(apply);
+      } else {
+        apply();
+      }
+    };
+
+    toolbar.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filter = btn.dataset.filter ?? 'all';
+        toolbar.querySelectorAll('[data-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        run();
+      });
+    });
+    sortSelect?.addEventListener('change', () => {
+      sort = sortSelect.value;
+      run();
+    });
+    apply();
+  }
+</script>
+
 <style>
-  /* 说明：这段样式只作用于本页面（Astro 的 <style> 默认是“局部样式”）。
-     方向相关的写法仍用逻辑属性，保证将来波斯语(RTL)下自动镜像。 */
-
-  .products-intro {
-    color: #555;
-    margin-block: 0 2rem;
-  }
-
-  /* 卡片网格：自动按屏幕宽度排列，每张卡片最小 260px，手机上自动换成单列 */
-  .product-grid {
+  .ph-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 2rem 4rem;
+  }
+  .range-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-lg);
+    background: var(--line);
+  }
+  .range-stats > div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    padding: 1.1rem 1.3rem;
+    background: rgb(17 19 23 / 0.8);
+  }
+  .range-stats dt {
+    font-size: 0.78rem;
+    color: var(--text-3);
+  }
+  .range-stats dd {
+    font-size: clamp(1.25rem, 1rem + 0.8vw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .range-stats small {
+    font-size: 0.6em;
+    color: var(--text-3);
+  }
+  @media (max-width: 900px) {
+    .ph-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
-  /* 整张卡片是一个链接：去掉下划线、文字颜色继承正常色 */
-  .product-card {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 1.25rem;
-    background: #fff;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  .list-section {
+    padding-block-start: 1rem;
   }
-  .product-card:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
+  .toolbar {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-block-end: 1.75rem;
+    padding: 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
   }
-
-  /* “查看详情 →”提示：靠近卡片底部，悬停卡片时变红 */
-  .view-details {
-    display: inline-block;
-    margin-block-start: 0.9rem;
+  :global(.js) .toolbar {
+    display: flex;
+  }
+  .seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .seg button {
+    min-height: 40px;
+    padding: 0 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    background: transparent;
     font-size: 0.85rem;
-    color: #b91c1c;
-    font-weight: 600;
+    font-weight: 650;
+    color: var(--text-2);
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      border-color 0.25s;
   }
-
-  /* 主图容器：固定高度 180px，图片居中。
-     object-fit: contain = 完整显示整台发动机（不裁切），不同宽高的图都统一成同样高度的区域，卡片不会高低不齐。 */
-  .product-photo {
-    height: 180px;
+  .seg button:hover {
+    color: var(--text);
+  }
+  .seg button[aria-pressed='true'] {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+  .toolbar-end {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border-radius: 8px;
-    padding: 0.5rem;
-    margin-block-end: 0.75rem;
+    gap: 1.25rem;
+    padding-inline-end: 0.4rem;
   }
-  .product-photo img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+  .results {
+    font-size: 0.82rem;
+    color: var(--text-3);
+    white-space: nowrap;
   }
-
-  .product-model {
-    margin-block: 0 0.75rem;
-    font-size: 1.4rem;
-    color: #b91c1c;
-  }
-
-  /* 徽章行 */
-  .badges {
+  .sort {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-block-end: 1rem;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--text-3);
   }
-  .badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    background: #f3f4f6;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    color: #374151;
+  .sort select {
+    min-height: 40px;
+    padding: 0 2.25rem 0 0.9rem;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-pill);
+    background: rgb(255 255 255 / 0.03)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b7bcc5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+      no-repeat right 0.8rem center / 16px;
+    appearance: none;
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--text);
+    cursor: pointer;
+  }
+  :global([dir='rtl']) .sort select {
+    padding: 0 0.9rem 0 2.25rem;
+    background-position: left 0.8rem center;
+  }
+  .sort select option {
+    background: var(--surface-2);
+  }
+  @media (max-width: 720px) {
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .toolbar-end {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+      padding: 0.25rem 0.4rem 0.2rem;
+    }
+    .sort span {
+      white-space: nowrap;
+    }
   }
 
-  /* 参数列表：改成“标签在上、数值在下”的堆叠式。
-     好处：长数值（如尺寸 285 × 220 × 222 mm）不会和标签在同一行互相挤压换行，排版更整齐。 */
-  .spec-list {
-    margin: 0;
+  /* ---------- 对比表 ---------- */
+  .scroll-hint {
+    display: none;
+    margin-block: -1.5rem 1rem;
+    font-size: 0.82rem;
+    color: var(--text-3);
   }
-  .spec-row {
-    padding-block: 0.4rem;
-    border-block-start: 1px solid #f0f0f0;
+  @media (max-width: 1180px) {
+    .scroll-hint {
+      display: block;
+    }
   }
-  .spec-row dt {
-    color: #666;
-    font-size: 0.78rem;
-    margin-block-end: 0.1rem;
+  .compare-wrap {
+    overflow-x: auto;
+    padding: 0;
   }
-  .spec-row dd {
-    margin: 0;
+  .compare {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.86rem;
+  }
+  .compare th,
+  .compare td {
+    padding: 0.85rem 1rem;
+    border-block-end: 1px solid var(--line);
+    text-align: start;
+    vertical-align: top;
+  }
+  .compare tbody tr:last-child > * {
+    border-block-end: 0;
+  }
+  .compare tbody tr:hover > * {
+    background: rgb(255 255 255 / 0.025);
+  }
+  .compare thead th {
+    padding-block: 1.1rem 0.9rem;
+    vertical-align: bottom;
+  }
+  .compare thead a {
+    display: grid;
+    justify-items: start;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .compare thead a:hover {
+    color: var(--accent-text);
+  }
+  .compare thead img {
+    width: 96px;
+    height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.5));
+  }
+  /* 第一列（参数名）横向滚动时固定在左侧（RTL 自动在右侧） */
+  .compare th:first-child {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 1;
+    min-width: 200px;
+    max-width: 240px;
+    background: var(--surface);
+    box-shadow: 1px 0 0 var(--line);
     font-weight: 600;
+    color: var(--text-2);
+  }
+  .compare-corner {
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-3) !important;
+  }
+  .compare td {
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  /* 文字较长的行（点火系统）允许换行 */
+  .compare tr.wrap td {
+    min-width: 150px;
+    white-space: normal;
+  }
+  .compare td small {
+    display: block;
+    margin-block-start: 0.2rem;
+    font-size: 0.72rem;
+    color: var(--text-3);
+  }
+  .compare .na {
+    color: var(--text-3);
   }
 </style>

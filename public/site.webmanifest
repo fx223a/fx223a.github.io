@@ -1,0 +1,13 @@
+{
+  "name": "UAV Drone Engine",
+  "short_name": "UAV Engine",
+  "description": "Two-stroke aircraft engines 120–730 cc for UAVs and light aircraft",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#07080a",
+  "theme_color": "#07080a",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

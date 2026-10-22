@@ -17,5 +17,17 @@ export default defineConfig({
   },
 
   // 自动生成 sitemap-index.xml / sitemap-0.xml（构建时）
-  integrations: [sitemap()],
+  // i18n：在站点地图里标明“同一页面的四种语言版本”（hreflang 互链），帮助 Google / Yandex 正确收录各语言页面
+  // lastmod：每次构建的日期，告诉搜索引擎内容更新过
+  integrations: [
+    sitemap({
+      i18n: {
+        defaultLocale: 'ru',
+        locales: { ru: 'ru', en: 'en', zh: 'zh', fa: 'fa' },
+      },
+      lastmod: new Date(),
+      // 根地址 / 只是跳转到 /ru/，不放进站点地图
+      filter: (page) => page !== 'https://uavdroneengine.com/',
+    }),
+  ],
 });

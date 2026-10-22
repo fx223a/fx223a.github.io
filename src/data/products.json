@@ -208,6 +208,10 @@
         "value": "41 kg"
       },
       {
+        "key": "max_takeoff_weight",
+        "value": "110 kg"
+      },
+      {
         "key": "recommended_propeller",
         "value": "32*10; 32*12; 34*10"
       },

@@ -1,0 +1,155 @@
+---
+// ============================================================
+// 页眉：Logo + 主导航（产品下拉菜单）+ 语言 + WhatsApp + 手机菜单
+// - 桌面端：鼠标移到“产品”上展开 7 个型号的下拉面板（带缩略图和关键参数）；
+//   键盘/触屏用户点旁边的小箭头按钮展开。
+// - 手机端（≤1080px）：汉堡按钮打开全屏菜单（用 <details>，不开 JS 也能用）。
+// - 页面滚动后页眉变成半透明毛玻璃（site.ts 添加 is-scrolled）。
+// ============================================================
+import ChevronDown from '@lucide/astro/icons/chevron-down';
+import Menu from '@lucide/astro/icons/menu';
+import X from '@lucide/astro/icons/x';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import Logo from './Logo.astro';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import BrandIcon from './BrandIcon.astro';
+import { locales, localeNames } from '../i18n/config';
+import { getLangFromUrl, useTranslations, localizedPath, formatNumber, localizeUnit } from '../i18n/utils';
+import { products, metrics, cutout } from '../lib/products';
+import { CONTACT } from '../config/site';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+// 当前所在页面（去掉语言段）：'' = 首页，'products...' = 产品，'inquiry' = 询价
+const path = Astro.url.pathname.split('/').filter(Boolean).slice(1).join('/');
+const home = `/${lang}/`;
+const nav = [
+  { href: home, label: t('nav_home'), current: path === '' },
+  { href: `/${lang}/products/`, label: t('nav_products'), current: path.startsWith('products'), mega: true },
+  { href: `${home}#about`, label: t('nav_about'), current: false },
+  { href: `${home}#service`, label: t('nav_service'), current: false },
+  { href: `${home}#faq`, label: t('nav_faq'), current: false },
+  { href: `/${lang}/inquiry/`, label: t('nav_inquiry'), current: path.startsWith('inquiry') },
+];
+
+// 下拉菜单里每个型号的一行小参数：功率 · 静推力
+const brief = (p: (typeof products)[number]) => {
+  const m = metrics(p);
+  const parts = [];
+  if (m.kw !== null) parts.push(`${formatNumber(m.kw, lang)} ${localizeUnit('kW', lang)}`);
+  if (m.thrust100 !== null) parts.push(`${formatNumber(m.thrust100, lang)} ${localizeUnit('kg', lang)}`);
+  return parts.join(' · ');
+};
+---
+<header class="site-header" data-header>
+  <div class="container header-inner">
+    <a class="logo" href={home} aria-label={t('site_name')}>
+      <Logo />
+    </a>
+
+    <!-- 主导航：aria-current 标记当前所在页面 -->
+    <nav class="main-nav" aria-label={t('nav_main_label')}>
+      <ul>
+        {nav.map((item) =>
+          item.mega ? (
+            <li class="nav-item has-mega" data-mega>
+              <a class="nav-link" href={item.href} aria-current={item.current ? 'page' : undefined}>{item.label}</a>
+              <button class="mega-toggle" type="button" aria-expanded="false" aria-controls="mega-products" aria-label={t('nav_products_toggle')}>
+                <ChevronDown aria-hidden="true" />
+              </button>
+              <div class="mega" id="mega-products">
+                <ul class="mega-grid">
+                  {products.map((p) => (
+                    <li>
+                      <a class="mega-item" href={`/${lang}/products/${p.id}/`}>
+                        <span class="mega-thumb">
+                          <img src={cutout(p.image, 'sm')} alt="" loading="lazy" decoding="async" width="76" height="64" />
+                        </span>
+                        <span>
+                          <span class="mega-name">{p.model}</span>
+                          <span class="mega-meta"><bdi>{brief(p)}</bdi></span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                  <li>
+                    <a class="mega-all" href={`/${lang}/products/`}>
+                      <strong>{t('nav_all_engines')} <span class="dir-arrow" aria-hidden="true">→</span></strong>
+                      <span>{t('nav_all_engines_desc')}</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          ) : (
+            <li class="nav-item">
+              <a class="nav-link" href={item.href} aria-current={item.current ? 'page' : undefined}>{item.label}</a>
+            </li>
+          )
+        )}
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <LanguageSwitcher />
+      <a class="btn btn--primary btn--sm header-wa" href={CONTACT.whatsappLink} target="_blank" rel="noopener" aria-label={t('cta_chat_whatsapp')}>
+        <BrandIcon name="whatsapp" />
+        <span class="btn-label">WhatsApp</span>
+      </a>
+
+      <!-- 手机菜单：<details> 原生可展开，不开 JS 也能用 -->
+      <details class="mnav" data-mnav>
+        <summary aria-label={t('nav_menu')}>
+          <Menu class="icon-open" aria-hidden="true" />
+          <X class="icon-close" aria-hidden="true" />
+        </summary>
+        <div class="mnav-panel">
+          <nav aria-label={t('nav_main_label')}>
+            <ul class="mnav-links">
+              {nav.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={item.current ? 'page' : undefined}>
+                    {item.label}
+                    <ArrowRight class="dir-arrow" aria-hidden="true" width="20" height="20" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <p class="mnav-label">{t('nav_models_label')}</p>
+          <ul class="mnav-models">
+            {products.map((p) => (
+              <li>
+                <a href={`/${lang}/products/${p.id}/`}>
+                  <img src={cutout(p.image, 'sm')} alt="" loading="lazy" decoding="async" width="44" height="36" />
+                  {p.model}
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          <p class="mnav-label">{t('language_label')}</p>
+          <div class="mnav-langs">
+            {locales.map((loc) => (
+              <a href={localizedPath(Astro.url, loc)} hreflang={loc} lang={loc} aria-current={loc === lang ? 'true' : undefined}>{localeNames[loc]}</a>
+            ))}
+          </div>
+
+          <div class="mnav-cta">
+            <a class="btn btn--wa btn--block" href={CONTACT.whatsappLink} target="_blank" rel="noopener">
+              <BrandIcon name="whatsapp" />
+              {t('cta_chat_whatsapp')}
+            </a>
+            <a class="btn btn--ghost btn--block" href={CONTACT.telegramLink} target="_blank" rel="noopener">
+              <BrandIcon name="telegram" />
+              Telegram
+            </a>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="scroll-progress" aria-hidden="true"></div>
+</header>

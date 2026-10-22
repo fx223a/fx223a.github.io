@@ -1,32 +1,38 @@
-# engine-site — 发动机产品展示 + 询价网站
+# engine-site — UAV Drone Engine 官网
 
-二冲程航空发动机（120–730cc，无人机/轻型飞行器用）的多语言展示网站，含询价表单，不接支付。
-目标市场：俄罗斯（默认语言）、乌克兰、伊朗。
+二冲程航空发动机（120–730cc，无人机/轻型飞行器用）的多语言展示网站，含询价（WhatsApp 优先），不接支付、不放价格。
+目标市场：俄罗斯（默认语言）、乌克兰、伊朗。正式域名：https://uavdroneengine.com
 
 ## 技术栈
 
-- [Astro](https://docs.astro.build) 静态站（构建产物为纯静态文件）
-- 纯 CSS（无 Tailwind），全程使用逻辑属性以支持 RTL（波斯语预留）
-- 产品数据：`src/data/products.json`（7 个型号），无数据库、无自建后端
-- 多语言：ru（默认）/ en / zh 已启用，fa（波斯语，RTL）翻译已完成待启用
+- [Astro 7](https://docs.astro.build) 静态站（构建产物为纯静态文件，部署在 GitHub Pages）
+- 纯 CSS（无 Tailwind），深色设计系统见 `src/styles/global.css` 顶部变量；全程逻辑属性，支持波斯语 RTL
+- 字体自托管（`@fontsource-variable/*`：Manrope / JetBrains Mono / Vazirmatn），图标 `@lucide/astro`（构建时内联，无运行时 JS）
+- 产品数据：`src/data/products.json`（7 个型号）；解析工具 `src/lib/products.ts`
+- 多语言：ru（默认）/ en / zh / fa（RTL）
 
 ## 常用命令
 
 | 命令 | 作用 |
 |---|---|
-| `npm run dev` | 启动开发服务器（`astro dev --background` 可后台运行） |
+| `npm run dev` | 启动开发服务器（`npx astro dev --background` 可后台运行） |
 | `npm run build` | 生产构建到 `dist/` |
 | `npm run preview` | 本地预览构建产物 |
-| `npm run check:placeholders` | **部署前自检**：全站搜「待填」/Placeholder，非 0 即拦截 |
-| `npm run deploy:check` | 自检 + 构建一条龙（上线前必须全绿） |
+| `npm run check:placeholders` | 部署前自检：全站搜「待填」/Placeholder，非 0 即拦截 |
+| `npm run check:i18n` | 多语言自检：四种语言条目和 `{占位变量}` 必须一致 |
+| `npm run deploy:check` | 两项自检 + 构建一条龙（上线前必须全绿） |
+| `npm run images:icons` | 由 `public/favicon.svg` 生成全套网站图标 |
+| `npm run images:og` | 生成分享预览图（`public/og/`） |
+| `python scripts/cutout_products.py` | 产品图 AI 超分辨率 + 抠图（需先装 `rembg[cpu]`，见脚本说明） |
 
 ## 重要文件
 
-- `CLAUDE.md`（→ `AGENTS.md`）— 项目规则与进度，含**上线红线**
-- `CONTENT-TODO.md` — 所有待客户提供的真实内容清单
-- `src/i18n/config.ts` — 语言总开关（启用 fa 只需把 `'fa'` 加入 `locales`）
-- `src/config/site.ts` — 询价接口地址（部署接口后填入）
+- `CLAUDE.md`（→ `AGENTS.md`）— 项目规则、设计系统与进度（**硬规则：绝不编造数据、价格不上网站**）
+- `CONTENT-TODO.md` — 待客户提供的真实内容清单
+- `src/i18n/config.ts` — 语言总开关；`src/i18n/*.ts` — 四种语言文案
+- `src/config/site.ts` — 联系方式（WhatsApp / Telegram / 邮箱）
+- `src/components/` — 页眉、页脚、Logo、产品卡片、询价横幅等组件
 
-## ⛔ 上线红线
+## 部署
 
-占位内容未填完禁止部署。`npm run check:placeholders` 必须通过才能上线，详见 `CLAUDE.md`。
+push 到 `main` 分支即自动部署（`.github/workflows/deploy.yml`：先跑占位自检和多语言自检，再构建发布）。

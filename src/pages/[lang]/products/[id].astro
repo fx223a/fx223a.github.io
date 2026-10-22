@@ -1,15 +1,33 @@
 ---
 // ============================================================
 // 产品详情页（多语言）
-// 网址：/ru/products/zt-t120/ 、/en/products/zt-t120/ 、/zh/products/zt-t120/ ...
-// 文件名 [id] 是“动态型号段”：Astro 会按 getStaticPaths 列出的 语言 × 型号 组合，
-// 用这一个文件生成所有型号的详情页。
-// 内容：3 张多角度图（点缩略图切换主图）+ 全部参数表 + 特性标签。
+// 网址：/ru/products/yt-550/ 、/en/products/yt-550/ ……（语言 × 型号 自动生成）
+// 内容：
+//   1. 画廊（抠图大图 + 缩略图 + 左右切换 + 点击放大）+ 型号信息 + 关键参数 + 询价按钮
+//   2. 性能可视化：转速范围 / 海拔推力保持率 / 化油器 vs 电喷油耗 / 在产品线中的功率位置
+//   3. 完整参数（按 性能 / 发动机 / 燃油与点火 / 重量与尺寸 / 选件 分组）+ 打印参数单
+//   4. 安装尺寸（等轴测线框图 + 长宽高）  5. 其它型号  6. 询价横幅
+// ★ 所有数字都直接来自 products.json；百分比是用两项真实参数算出来的，不编造任何数据。
 // ============================================================
+import ChevronLeft from '@lucide/astro/icons/chevron-left';
+import ChevronRight from '@lucide/astro/icons/chevron-right';
+import Maximize2 from '@lucide/astro/icons/maximize-2';
+import X from '@lucide/astro/icons/x';
+import Printer from '@lucide/astro/icons/printer';
+import ShieldCheck from '@lucide/astro/icons/shield-check';
+import PackageCheck from '@lucide/astro/icons/package-check';
+import Wrench from '@lucide/astro/icons/wrench';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SectionHead from '../../../components/SectionHead.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import CtaBand from '../../../components/CtaBand.astro';
+import BrandIcon from '../../../components/BrandIcon.astro';
+import Logo from '../../../components/Logo.astro';
 import { locales } from '../../../i18n/config';
-import { useTranslations, localizeSpecValue } from '../../../i18n/utils';
-import products from '../../../data/products.json';
+import { useTranslations, localizeSpecValue, localizeUnit, formatNumber, formatStat } from '../../../i18n/utils';
+import { products, metrics, cutout, groupedSpecs, lineupStats, specValue, type Product } from '../../../lib/products';
+import { responsive } from '../../../lib/image-size';
+import { CONTACT, SALES } from '../../../config/site';
 
 // 为“每种语言 × 每个型号”各生成一个详情页，并把该型号数据通过 props 传进来。
 export function getStaticPaths() {
@@ -22,193 +40,1221 @@ export function getStaticPaths() {
 }
 
 const { lang } = Astro.params;
-const { product } = Astro.props;
+const { product } = Astro.props as { product: Product };
 const t = useTranslations(lang);
+const u = (unit: string) => localizeUnit(unit, lang);
+const num = (v: number | null) => (v === null ? '—' : formatNumber(v, lang));
+const pct = (v: number) => formatStat(Math.round(v), lang);
+const m = metrics(product);
+const stats = lineupStats();
+const site = Astro.site?.origin ?? '';
+const home = `/${lang}/`;
 
-// 图片 alt 文字：型号名 + 翻译描述（走 i18n，随语言切换）
+// 参数原文 → 显示文字
+const show = (value: string) => (value.startsWith('specval_') ? t(value) : localizeSpecValue(value, lang));
+
+// ---- 一句话介绍：完全由真实参数拼出 ----
+const intro =
+  t('detail_intro', {
+    model: product.model,
+    cyl: product.cylinders === 4 ? t('detail_cyl_4') : t('detail_cyl_2'),
+    cool: product.cooling === 'water' ? t('detail_cool_water') : t('detail_cool_air'),
+    power: `${num(m.kw)} ${u('kW')}`,
+    thrust: `${num(m.thrust100)} ${u('kg')}`,
+  }) + (m.mtow !== null ? (lang === 'zh' ? '' : ' ') + t('detail_intro_mtow', { mtow: `${num(m.mtow)} ${u('kg')}` }) : '');
+
+// ---- 画廊：主图默认用 -2（product.image）----
+// 每张图都有小图（520px）和大图（约 1000px，AI 超分辨率）两个版本，浏览器自动挑选
+const gallery = product.images.map((src) => ({
+  sm: cutout(src, 'sm'),
+  lg: cutout(src),
+  r: responsive(cutout(src, 'sm'), cutout(src)),
+}));
+const mainIndex = Math.max(0, product.images.indexOf(product.image));
 const imgAlt = `${product.model} — ${t('product_image_alt')}`;
-// 主图默认用第 2 张（索引 1，即 -2）
-const mainImage = product.image;
+
+// ---- WhatsApp 预填消息（打开就是“我想咨询 YT-550CC”）----
+const waHref = `https://wa.me/${CONTACT.phoneDigits}?text=${encodeURIComponent(t('wa_prefill', { model: product.model }))}`;
+
+// ---- 性能可视化 ----
+// 转速表（半圆 0–8000 rpm）
+const RPM_MAX = 8000;
+const G = { cx: 160, cy: 150, r: 120 };
+const rpmPoint = (rpm: number, r = G.r) => {
+  const a = Math.PI + (rpm / RPM_MAX) * Math.PI; // 左(180°) → 右(360°)，经过顶部
+  return [G.cx + r * Math.cos(a), G.cy + r * Math.sin(a)];
+};
+const arcPath = (from: number, to: number, r = G.r) => {
+  const [x1, y1] = rpmPoint(from, r);
+  const [x2, y2] = rpmPoint(to, r);
+  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+};
+const rpmTicks = Array.from({ length: RPM_MAX / 1000 + 1 }, (_, i) => {
+  const [x1, y1] = rpmPoint(i * 1000, G.r - 16);
+  const [x2, y2] = rpmPoint(i * 1000, G.r - 8);
+  const [lx, ly] = rpmPoint(i * 1000, G.r - 30);
+  return { x1, y1, x2, y2, lx, ly, v: i };
+});
+const idlePoint = m.idle !== null ? rpmPoint(m.idle, G.r) : null;
+
+// 海拔推力保持率 = 1800 米推力 ÷ 100 米推力
+const altRatio = m.thrust100 && m.thrust1800 ? m.thrust1800 / m.thrust100 : null;
+// 电喷省油比例 = (化油器油耗 − 电喷油耗) ÷ 化油器油耗
+const fuelSaving = m.fuelCarb && m.fuelEfi ? (m.fuelCarb - m.fuelEfi) / m.fuelCarb : null;
+// 全系功率对比（强调当前型号，其余灰色）
+const lineup = products.map((p) => ({ p, kw: metrics(p).kw ?? 0, current: p.id === product.id }));
+const kwAxis = 50;
+
+// ---- 参数分组 ----
+const groups = groupedSpecs(product);
+
+// ---- 安装尺寸：等轴测线框图（按真实长宽高比例绘制）----
+const dims = m.dims;
+let iso: null | {
+  edges: { d: string; hidden?: boolean }[];
+  labels: { x: number; y: number; text: string; anchor: string }[];
+  dimLines: string[];
+  extLines: string[];
+  ends: number[][];
+  viewBox: string;
+} = null;
+if (dims) {
+  const [L, W, H] = dims;
+  const s = 210 / Math.max(L, W, H); // 最大边缩放到 210 个单位
+  const c30 = Math.cos(Math.PI / 6);
+  const s30 = Math.sin(Math.PI / 6);
+  const P = (x: number, y: number, z: number) => [(x - y) * c30 * s, (x + y) * s30 * s - z * s];
+  const pts = {
+    a: P(0, 0, 0), b: P(L, 0, 0), c: P(L, W, 0), d: P(0, W, 0),
+    e: P(0, 0, H), f: P(L, 0, H), g: P(L, W, H), h: P(0, W, H),
+  };
+  const xs = Object.values(pts).map((p) => p[0]);
+  const ys = Object.values(pts).map((p) => p[1]);
+  const pad = 70;
+  const minX = Math.min(...xs) - pad;
+  const minY = Math.min(...ys) - pad;
+  const w = Math.max(...xs) - Math.min(...xs) + pad * 2;
+  const h = Math.max(...ys) - Math.min(...ys) + pad * 2;
+  const seg = (p: number[], q: number[]) => `M ${p[0].toFixed(1)} ${p[1].toFixed(1)} L ${q[0].toFixed(1)} ${q[1].toFixed(1)}`;
+  // 可见棱：顶面 4 条 + 3 条竖棱 + 底面前 2 条；被挡住的 3 条画虚线
+  const edges = [
+    { d: seg(pts.e, pts.f) }, { d: seg(pts.f, pts.g) }, { d: seg(pts.g, pts.h) }, { d: seg(pts.h, pts.e) },
+    { d: seg(pts.b, pts.f) }, { d: seg(pts.c, pts.g) }, { d: seg(pts.d, pts.h) },
+    { d: seg(pts.b, pts.c) }, { d: seg(pts.c, pts.d) },
+    { d: seg(pts.a, pts.b), hidden: true }, { d: seg(pts.a, pts.d), hidden: true }, { d: seg(pts.a, pts.e), hidden: true },
+  ];
+  // 尺寸线：沿 b→c（宽）、c→d（长）的外侧，以及 d→h（高）的外侧
+  const off = (p: number[], dx: number, dy: number) => [p[0] + dx, p[1] + dy];
+  const lenA = off(pts.c, 0, 34);
+  const lenB = off(pts.d, 0, 34);
+  const widA = off(pts.b, 0, 34);
+  const widB = off(pts.c, 0, 34);
+  const hgtA = off(pts.d, -34, 0);
+  const hgtB = off(pts.h, -34, 0);
+  const mid = (p: number[], q: number[]) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  const mm = u('mm');
+  iso = {
+    edges,
+    dimLines: [seg(lenA, lenB), seg(widA, widB), seg(hgtA, hgtB)],
+    // 引出线：从箱体棱角连到尺寸线两端（工程图画法）
+    extLines: [seg(pts.c, lenA), seg(pts.d, lenB), seg(pts.b, widA), seg(pts.d, hgtA), seg(pts.h, hgtB)],
+    ends: [lenA, lenB, widA, widB, hgtA, hgtB],
+    labels: [
+      { x: mid(lenA, lenB)[0] - 6, y: mid(lenA, lenB)[1] + 22, text: `${t('dims_length')} ${num(L)} ${mm}`, anchor: 'end' },
+      { x: mid(widA, widB)[0] + 6, y: mid(widA, widB)[1] + 22, text: `${t('dims_width')} ${num(W)} ${mm}`, anchor: 'start' },
+      { x: mid(hgtA, hgtB)[0] - 10, y: mid(hgtA, hgtB)[1], text: `${t('dims_height')} ${num(H)} ${mm}`, anchor: 'end' },
+    ],
+    viewBox: `${(minX - 60).toFixed(0)} ${minY.toFixed(0)} ${(w + 60).toFixed(0)} ${h.toFixed(0)}`,
+  };
+}
+
+// ---- 其它型号：排量最接近的 3 款 ----
+const related = products
+  .filter((p) => p.id !== product.id)
+  .sort((a, b) => Math.abs((metrics(a).cc ?? 0) - (m.cc ?? 0)) - Math.abs((metrics(b).cc ?? 0) - (m.cc ?? 0)))
+  .slice(0, 3);
+
+// ---- 结构化数据：产品 + 面包屑（不含价格：价格不上网站）----
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.model,
+    sku: product.model,
+    description: intro,
+    image: product.images.map((src) => `${site}${src}`),
+    brand: { '@type': 'Brand', name: t('site_name') },
+    category: t('product_image_alt'),
+    url: `${site}/${lang}/products/${product.id}/`,
+    additionalProperty: product.specs.map((s) => ({
+      '@type': 'PropertyValue',
+      name: t('spec_' + s.key),
+      value: show(s.value),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: t('nav_home'), item: `${site}${home}` },
+      { '@type': 'ListItem', position: 2, name: t('nav_products'), item: `${site}/${lang}/products/` },
+      { '@type': 'ListItem', position: 3, name: product.model, item: `${site}/${lang}/products/${product.id}/` },
+    ],
+  },
+];
+
+const keySpecs = [
+  { label: t('short_power'), value: num(m.kw), unit: u('kW'), sub: m.hp !== null ? `${num(m.hp)} ${u('hp')}` : null },
+  { label: t('short_thrust_100'), value: num(m.thrust100), unit: u('kg'), sub: m.thrust1800 !== null ? `${t('short_thrust_1800')}: ${num(m.thrust1800)} ${u('kg')}` : null },
+  { label: t('short_displacement'), value: num(m.cc), unit: u('cc'), sub: specValue(product, 'diameter_stroke') ? show(specValue(product, 'diameter_stroke')!) : null },
+  { label: m.weightKey === 'main_machine_weight' ? t('short_weight_main') : t('short_weight'), value: num(m.weight), unit: u('kg'), sub: m.mtow !== null ? `${t('short_mtow')}: ${num(m.mtow)} ${u('kg')}` : null },
+];
 ---
-<BaseLayout title={product.model}>
-  <!-- 返回列表的面包屑 -->
-  <p class="breadcrumb">
-    <!-- 返回箭头是有方向的，RTL（波斯语）下需要镜像；.dir-arrow 的翻转规则在 global.css -->
-    <a href={`/${lang}/products/`}><span class="dir-arrow" aria-hidden="true">←</span> {t('nav_products')}</a>
-  </p>
+<BaseLayout title={product.model} description={intro} ogImage={`/og/${product.id}.jpg`} jsonLd={jsonLd}>
+  <!-- ======================================================
+       1. 画廊 + 型号信息
+       ====================================================== -->
+  <section class="page-hero detail-hero" aria-labelledby="product-title">
+    <div class="container">
+      <nav class="breadcrumb no-print" aria-label="Breadcrumb">
+        <ol>
+          <li><a href={home}>{t('nav_home')}</a></li>
+          <li><a href={`/${lang}/products/`}>{t('nav_products')}</a></li>
+          <li><span aria-current="page">{product.model}</span></li>
+        </ol>
+      </nav>
 
-  <h1 class="detail-title">{product.model}</h1>
-
-  <!-- 特性标签：把该型号 features 列表逐个翻译成徽章 -->
-  <div class="badges">
-    {product.features.map((f) => (
-      <span class="badge">{t('feature_' + f)}</span>
-    ))}
-  </div>
-
-  <!-- 询价按钮：跳到询价表单，并用 ?model= 带上当前型号，表单会自动选中它 -->
-  <a class="btn inquiry-cta" href={`/${lang}/inquiry/?model=${product.id}`}>
-    {t('nav_inquiry')}
-  </a>
-
-  <div class="detail-layout">
-    <!-- 左侧：图片画廊（大主图 + 3 张缩略图，点缩略图切换主图）-->
-    <div class="gallery">
-      <div class="gallery-main">
-        <!-- 主图是本页的 LCP 元素：不能 lazy，且用 fetchpriority 提示浏览器优先加载 -->
-        <img id="mainImage" src={mainImage} alt={imgAlt} fetchpriority="high" decoding="async" />
+      <!-- 打印时才显示的页眉（Logo + 网址） -->
+      <div class="print-only print-head">
+        <span class="logo"><Logo id="logo-print" /></span>
+        <span>uavdroneengine.com</span>
       </div>
-      <div class="gallery-thumbs">
-        {product.images.map((src, i) => (
-          <button
-            class={`thumb ${src === mainImage ? 'active' : ''}`}
-            data-src={src}
-            type="button"
-            aria-label={`${imgAlt} (${i + 1}/${product.images.length})`}
-          >
-            <img src={src} alt={`${imgAlt} (${i + 1})`} loading="lazy" decoding="async" />
-          </button>
+
+      <div class="detail-grid">
+        <div class="gallery" data-gallery>
+          <div class="gallery-stage">
+            <span class="gallery-cc" aria-hidden="true">{m.cc}<small>cc</small></span>
+            {gallery.map((g, i) => (
+              <img
+                class:list={['gallery-img', { 'is-active': i === mainIndex }]}
+                src={g.r.src}
+                srcset={g.r.srcset}
+                sizes="(max-width: 960px) 80vw, 490px"
+                data-full={g.lg}
+                alt={`${imgAlt} (${i + 1}/${gallery.length})`}
+                width={g.r.width}
+                height={g.r.height}
+                loading={i === mainIndex ? 'eager' : 'lazy'}
+                fetchpriority={i === mainIndex ? 'high' : undefined}
+                decoding="async"
+                data-index={i}
+              />
+            ))}
+            <button class="gallery-nav gallery-prev no-print" type="button" data-gallery-prev aria-label={t('gallery_prev')}>
+              <ChevronLeft class="dir-arrow" aria-hidden="true" />
+            </button>
+            <button class="gallery-nav gallery-next no-print" type="button" data-gallery-next aria-label={t('gallery_next')}>
+              <ChevronRight class="dir-arrow" aria-hidden="true" />
+            </button>
+            <button class="gallery-zoom no-print" type="button" data-gallery-zoom aria-label={t('gallery_zoom')}>
+              <Maximize2 aria-hidden="true" />
+            </button>
+            <span class="gallery-count no-print" aria-hidden="true" dir="ltr"><span data-gallery-current>{mainIndex + 1}</span> / {gallery.length}</span>
+          </div>
+          <div class="gallery-thumbs no-print" role="group" aria-label={t('gallery_label')}>
+            {gallery.map((g, i) => (
+              <button class="thumb" type="button" aria-pressed={i === mainIndex ? 'true' : 'false'} data-index={i} aria-label={`${imgAlt} (${i + 1}/${gallery.length})`}>
+                <img src={g.sm} alt="" width={g.r.width} height={g.r.height} loading="lazy" decoding="async" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="detail-info">
+          <p class="eyebrow">{product.cylinders === 4 ? t('filter_four') : t('filter_twin')} · {product.cooling === 'water' ? t('filter_water') : t('filter_air')}</p>
+          <h1 class="detail-title" id="product-title">{product.model}</h1>
+          <p class="detail-intro">{intro}</p>
+          <ul class="tag-row detail-tags">
+            {product.features.map((f) => <li class="tag">{t('feature_' + f)}</li>)}
+          </ul>
+
+          <dl class="key-specs">
+            {keySpecs.map((k) => (
+              <div>
+                <dt>{k.label}</dt>
+                <dd>
+                  <bdi class="ks-value">{k.value} <small>{k.unit}</small></bdi>
+                  {k.sub && <bdi class="ks-sub">{k.sub}</bdi>}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div class="detail-ctas no-print">
+            <a class="btn btn--primary btn--lg" href={waHref} target="_blank" rel="noopener">
+              <BrandIcon name="whatsapp" />
+              {t('detail_cta_whatsapp')}
+            </a>
+            <a class="btn btn--ghost btn--lg" href={`/${lang}/inquiry/?model=${product.id}`}>{t('nav_inquiry')}</a>
+          </div>
+          <ul class="trust-list">
+            <li><ShieldCheck aria-hidden="true" />{t('detail_trust_warranty')}</li>
+            <li><PackageCheck aria-hidden="true" />{t('detail_trust_delivery')}</li>
+            <li><Wrench aria-hidden="true" />{t('detail_trust_support')}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       2. 性能可视化
+       ====================================================== -->
+  <section class="section section--line perf-section no-print" id="performance" aria-labelledby="perf-title">
+    <div class="container">
+      <SectionHead eyebrow={t('perf_eyebrow')} title={t('perf_title')} id="perf-title" />
+      <div class="perf-grid">
+        {m.rpm && (
+          <article class="card perf-card" data-reveal style="--i:0">
+            <h3>{t('perf_rpm_title')}</h3>
+            <svg class="rpm-gauge" viewBox="0 0 320 175" role="img" aria-label={`${t('perf_rpm_title')}: ${num(m.rpm[0])}–${num(m.rpm[1])} ${u('rpm')}`}>
+              <path class="rg-track" d={arcPath(0, RPM_MAX)} />
+              <path class="rg-range" d={arcPath(m.rpm[0], m.rpm[1])} />
+              {rpmTicks.map((k) => (
+                <g>
+                  <line x1={k.x1.toFixed(1)} y1={k.y1.toFixed(1)} x2={k.x2.toFixed(1)} y2={k.y2.toFixed(1)} />
+                  <text x={k.lx.toFixed(1)} y={k.ly.toFixed(1)}>{k.v}</text>
+                </g>
+              ))}
+              {idlePoint && <circle class="rg-idle" cx={idlePoint[0].toFixed(1)} cy={idlePoint[1].toFixed(1)} r="5" />}
+              <text class="rg-unit" x={G.cx} y={G.cy - 12}>×1000 {u('rpm')}</text>
+            </svg>
+            <p class="perf-big"><bdi>{num(m.rpm[0])}–{num(m.rpm[1])}</bdi> <small>{u('rpm')}</small></p>
+            {m.idle !== null && <p class="perf-note"><span class="dot dot--idle" aria-hidden="true"></span>{t('perf_rpm_idle', { rpm: `${num(m.idle)} ${u('rpm')}` })}</p>}
+          </article>
+        )}
+
+        {altRatio !== null && (
+          <article class="card perf-card" data-reveal style="--i:1">
+            <h3>{t('perf_alt_title')}</h3>
+            <div class="hbars">
+              <div class="hbar">
+                <span class="hbar-label">{t('chart_legend_100')}</span>
+                <span class="hbar-track"><span class="hbar-fill hbar-fill--a" style="--w:1"></span></span>
+                <bdi class="hbar-val">{num(m.thrust100)} {u('kg')}</bdi>
+              </div>
+              <div class="hbar">
+                <span class="hbar-label">{t('chart_legend_1800')}</span>
+                <span class="hbar-track"><span class="hbar-fill hbar-fill--b" style={`--w:${altRatio.toFixed(4)}`}></span></span>
+                <bdi class="hbar-val">{num(m.thrust1800)} {u('kg')}</bdi>
+              </div>
+            </div>
+            <p class="perf-big">{pct(altRatio * 100)}<small>%</small></p>
+            <p class="perf-note">{t('perf_alt_note', { p: pct(altRatio * 100) })}</p>
+          </article>
+        )}
+
+        {fuelSaving !== null && (
+          <article class="card perf-card" data-reveal style="--i:2">
+            <h3>{t('perf_fuel_title')}</h3>
+            <div class="hbars">
+              <div class="hbar">
+                <span class="hbar-label">{t('perf_fuel_carb')}</span>
+                <span class="hbar-track"><span class="hbar-fill hbar-fill--muted" style="--w:1"></span></span>
+                <bdi class="hbar-val">{num(m.fuelCarb)} {u('L/h')}</bdi>
+              </div>
+              <div class="hbar">
+                <span class="hbar-label">{t('perf_fuel_efi')}</span>
+                <span class="hbar-track"><span class="hbar-fill hbar-fill--a" style={`--w:${(1 - fuelSaving).toFixed(4)}`}></span></span>
+                <bdi class="hbar-val">{num(m.fuelEfi)} {u('L/h')}</bdi>
+              </div>
+            </div>
+            <p class="perf-big">−{pct(fuelSaving * 100)}<small>%</small></p>
+            <p class="perf-note">{t('perf_fuel_note', { p: pct(fuelSaving * 100) })}</p>
+          </article>
+        )}
+
+        <article class="card perf-card" data-reveal style="--i:3">
+          <h3>{t('perf_lineup_title')}</h3>
+          <ol class="lineup-bars">
+            {lineup.map((l) => (
+              <li class:list={{ current: l.current }}>
+                <a href={`/${lang}/products/${l.p.id}/`} aria-current={l.current ? 'page' : undefined}>
+                  <span class="lb-name">{l.p.model.replace(/^YT-/, '').replace(/CC$/, '')}</span>
+                  <span class="lb-track"><span class="lb-fill" style={`--w:${(l.kw / kwAxis).toFixed(4)}`}></span></span>
+                  <bdi class="lb-val">{num(l.kw)}</bdi>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <p class="perf-note">{t('short_power')}, {u('kW')}. {t('perf_lineup_note', { max: `${num(stats.kw[1])} ${u('kW')}` })}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       3. 完整参数（分组）
+       ====================================================== -->
+  <section class="section section--alt section--line" id="specs" aria-labelledby="specs-title">
+    <div class="container">
+      <div class="specs-head">
+        <SectionHead eyebrow={t('specs_eyebrow')} title={t('specs_title')} id="specs-title" />
+        <button class="btn btn--ghost no-print" type="button" data-print>
+          <Printer aria-hidden="true" />
+          {t('detail_print')}
+        </button>
+      </div>
+      <div class="spec-groups">
+        {groups.map((g, i) => (
+          <section class="card spec-group" data-reveal style={`--i:${i % 2}`} aria-labelledby={`sg-${g.id}`}>
+            <h3 id={`sg-${g.id}`}>{t('specs_group_' + g.id)}</h3>
+            <dl class="spec-list">
+              {g.specs.map((s) => (
+                <div>
+                  <dt>{t('spec_' + s.key)}</dt>
+                  <dd><bdi>{show(s.value)}</bdi></dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         ))}
       </div>
+      <p class="specs-note">{t('specs_note')}</p>
     </div>
+  </section>
 
-    <!-- 右侧：全部参数表 -->
-    <div class="spec-table-wrap">
-      <table class="spec-table">
-        <tbody>
-          {product.specs.map((s) => (
-            <tr>
-              <th scope="row">{t('spec_' + s.key)}</th>
-              {/* 值若是 specval_ 开头的 token（文字描述型）就走 i18n 翻译；
-                  数值型的值经 localizeSpecValue 做单位本地化（俄语显示 л.с./см³/об/мин 等）。
-                  <bdi>：数值是拉丁字符（LTR），在波斯语(RTL)页面里做双向文本隔离，防止单位被甩到错误一侧 */}
-              <td><bdi>{s.value.startsWith('specval_') ? t(s.value) : localizeSpecValue(s.value, lang)}</bdi></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <!-- ======================================================
+       4. 安装尺寸（按真实长宽高比例绘制的等轴测线框图）
+       ====================================================== -->
+  {dims && iso && (
+    <section class="section section--line" id="dimensions" aria-labelledby="dims-title">
+      <div class="container dims">
+        <div>
+          <SectionHead eyebrow={t('dims_eyebrow')} title={t('dims_title')} desc={t('dims_desc')} id="dims-title" />
+          <dl class="dims-tiles">
+            <div><dt>{t('dims_length')}</dt><dd><bdi>{num(dims[0])} <small>{u('mm')}</small></bdi></dd></div>
+            <div><dt>{t('dims_width')}</dt><dd><bdi>{num(dims[1])} <small>{u('mm')}</small></bdi></dd></div>
+            <div><dt>{t('dims_height')}</dt><dd><bdi>{num(dims[2])} <small>{u('mm')}</small></bdi></dd></div>
+            <div><dt>{m.weightKey === 'main_machine_weight' ? t('short_weight_main') : t('short_weight')}</dt><dd><bdi>{num(m.weight)} <small>{u('kg')}</small></bdi></dd></div>
+          </dl>
+        </div>
+        <figure class="card dims-figure" data-reveal>
+          <svg viewBox={iso.viewBox} role="img" aria-label={`${t('dims_title')}: ${num(dims[0])} × ${num(dims[1])} × ${num(dims[2])} ${u('mm')}`}>
+            {iso.edges.map((e) => <path class:list={['iso-edge', { hidden: e.hidden }]} d={e.d} />)}
+            {iso.extLines.map((d) => <path class="iso-ext" d={d} />)}
+            {iso.dimLines.map((d) => <path class="iso-dim" d={d} />)}
+            {iso.ends.map((p) => <circle class="iso-end" cx={p[0].toFixed(1)} cy={p[1].toFixed(1)} r="3" />)}
+            {iso.labels.map((l) => (
+              <text class="iso-label" x={l.x.toFixed(1)} y={l.y.toFixed(1)} text-anchor={l.anchor}>{l.text}</text>
+            ))}
+          </svg>
+        </figure>
+      </div>
+    </section>
+  )}
+
+  <!-- ======================================================
+       5. 其它型号
+       ====================================================== -->
+  <section class="section section--alt section--line no-print" id="related" aria-labelledby="related-title">
+    <div class="container">
+      <SectionHead eyebrow={t('related_eyebrow')} title={t('related_title')} id="related-title" />
+      <div class="product-grid related-grid">
+        {related.map((p, i) => <ProductCard product={p} lang={lang} i={i} />)}
+      </div>
     </div>
+  </section>
+
+  <CtaBand whatsappHref={waHref} />
+
+  <!-- 打印时才显示：联系方式 -->
+  <div class="print-only print-contact container">
+    <strong>{t('print_contact')}</strong>
+    <span>WhatsApp / Telegram: {CONTACT.phoneDisplay}</span>
+    <span>Email: {CONTACT.email}</span>
+    {SALES.map((s) => (
+      <span>{s.name} ({t('sales_role')}) — WhatsApp: {s.phoneDisplay} · Email: {s.email}</span>
+    ))}
+    <span>uavdroneengine.com/{lang}/products/{product.id}/</span>
   </div>
+
+  <!-- 图片放大查看（原生 <dialog>：Esc 键可关闭） -->
+  <dialog class="lightbox" data-lightbox aria-label={t('gallery_label')}>
+    <button class="lightbox-close" type="button" data-lightbox-close aria-label={t('gallery_close')}>
+      <X aria-hidden="true" />
+    </button>
+    <img data-lightbox-img src={gallery[mainIndex].lg} alt={imgAlt} loading="lazy" />
+  </dialog>
 </BaseLayout>
 
 <script>
-  // 点击缩略图 → 切换大主图，并高亮当前缩略图
-  const main = document.getElementById('mainImage') as HTMLImageElement | null;
-  document.querySelectorAll<HTMLButtonElement>('.thumb').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const src = btn.dataset.src;
-      if (main && src) main.src = src;
-      document.querySelectorAll('.thumb').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
+  // ============================================================
+  // 详情页交互：画廊切换（按钮 / 缩略图 / 键盘 / 手机滑动）+ 放大查看 + 打印
+  // ============================================================
+  const galleryEl = document.querySelector<HTMLElement>('[data-gallery]');
+  const lightbox = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  const lightboxImg = document.querySelector<HTMLImageElement>('[data-lightbox-img]');
+
+  if (galleryEl) {
+    const imgs = Array.from(galleryEl.querySelectorAll<HTMLImageElement>('.gallery-img'));
+    const thumbs = Array.from(galleryEl.querySelectorAll<HTMLButtonElement>('.thumb'));
+    const counter = galleryEl.querySelector<HTMLElement>('[data-gallery-current]');
+    let current = Math.max(0, imgs.findIndex((img) => img.classList.contains('is-active')));
+
+    const go = (i: number) => {
+      current = (i + imgs.length) % imgs.length;
+      imgs.forEach((img, k) => img.classList.toggle('is-active', k === current));
+      thumbs.forEach((b, k) => b.setAttribute('aria-pressed', String(k === current)));
+      if (counter) counter.textContent = String(current + 1);
+    };
+    const rtl = document.documentElement.dir === 'rtl';
+    galleryEl.querySelector('[data-gallery-prev]')?.addEventListener('click', () => go(current - 1));
+    galleryEl.querySelector('[data-gallery-next]')?.addEventListener('click', () => go(current + 1));
+    thumbs.forEach((b, k) => b.addEventListener('click', () => go(k)));
+    galleryEl.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') go(current + (rtl ? -1 : 1));
+      if (e.key === 'ArrowLeft') go(current + (rtl ? 1 : -1));
     });
+
+    // 手机左右滑动切换
+    let startX = 0;
+    const stage = galleryEl.querySelector<HTMLElement>('.gallery-stage');
+    stage?.addEventListener('pointerdown', (e) => (startX = e.clientX));
+    stage?.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 40) go(current + ((dx < 0) !== rtl ? 1 : -1));
+    });
+
+    // 放大查看
+    const openLightbox = () => {
+      if (!lightbox || !lightboxImg) return;
+      lightboxImg.src = imgs[current].dataset.full || imgs[current].currentSrc || imgs[current].src; // 放大查看总是用大图
+      lightboxImg.alt = imgs[current].alt;
+      lightbox.showModal();
+    };
+    galleryEl.querySelector('[data-gallery-zoom]')?.addEventListener('click', openLightbox);
+    imgs.forEach((img) => img.addEventListener('dblclick', openLightbox));
+  }
+
+  lightbox?.querySelector('[data-lightbox-close]')?.addEventListener('click', () => lightbox.close());
+  // 点击图片外的暗色区域也关闭
+  lightbox?.addEventListener('click', (e) => {
+    if (e.target === lightbox) lightbox.close();
   });
+
+  // 打印 / 另存为 PDF
+  document.querySelectorAll('[data-print]').forEach((btn) => btn.addEventListener('click', () => window.print()));
 </script>
 
 <style>
-  /* 说明：本页样式局部生效；方向相关一律用逻辑属性，保证将来波斯语(RTL)自动镜像。 */
-
-  .breadcrumb {
-    margin-block: 0 1rem;
+  /* ---------- 1. 画廊 + 信息 ---------- */
+  .detail-hero {
+    padding-block-end: clamp(3rem, 2rem + 3vw, 5rem);
   }
-  .breadcrumb a {
-    color: #b91c1c;
-    text-decoration: none;
-  }
-  .breadcrumb a:hover { text-decoration: underline; }
-
-  .detail-title {
-    margin-block: 0 0.75rem;
-    color: #b91c1c;
-  }
-
-  .badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-block-end: 1.5rem;
-  }
-  .badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    background: #f3f4f6;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    color: #374151;
-  }
-
-  /* 询价按钮（复用全局 .btn 红色样式），与下方参数区拉开间距 */
-  .inquiry-cta {
-    margin-block-end: 1.75rem;
-  }
-
-  /* 两栏布局：左图右参数；窄屏(手机)自动堆成单列 */
-  .detail-layout {
+  .detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
     align-items: start;
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+    margin-block-start: 2rem;
   }
-  @media (max-width: 700px) {
-    .detail-layout { grid-template-columns: 1fr; }
+  .gallery-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1 / 0.86;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    background:
+      radial-gradient(60% 55% at 50% 55%, rgb(255 255 255 / 0.09), transparent 70%),
+      radial-gradient(80% 50% at 50% 115%, rgb(255 70 40 / 0.22), transparent 70%),
+      var(--surface);
+    touch-action: pan-y;
   }
-
-  /* ===== 图片画廊 ===== */
-  .gallery-main {
-    height: 320px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border-radius: 10px;
-    padding: 0.75rem;
+  .gallery-cc {
+    position: absolute;
+    inset-inline-start: 1.5rem;
+    top: 1rem;
+    font-family: var(--font-mono);
+    font-size: clamp(4rem, 3rem + 5vw, 8rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(255 255 255 / 0.09);
+    pointer-events: none;
+    user-select: none;
   }
-  .gallery-main img {
-    max-width: 100%;
-    max-height: 100%;
+  .gallery-cc small {
+    font-size: 0.35em;
+    letter-spacing: 0;
+  }
+  .gallery-img {
+    grid-area: 1 / 1;
+    width: 78%;
+    height: 82%;
     object-fit: contain;
+    filter: drop-shadow(0 30px 36px rgb(0 0 0 / 0.6));
+    opacity: 0;
+    transform: scale(0.96);
+    transition:
+      opacity 0.5s var(--ease),
+      transform 0.7s var(--ease);
+  }
+  .gallery-img.is-active {
+    opacity: 1;
+    transform: none;
+  }
+  .gallery-nav,
+  .gallery-zoom {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    background: rgb(10 11 14 / 0.7);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    color: var(--text);
+    transition:
+      border-color 0.25s,
+      background-color 0.25s;
+  }
+  .gallery-nav:hover,
+  .gallery-zoom:hover {
+    border-color: var(--line-3);
+    background: rgb(30 33 40 / 0.9);
+  }
+  .gallery-nav svg,
+  .gallery-zoom svg {
+    width: 20px;
+    height: 20px;
+  }
+  .gallery-prev {
+    inset-inline-start: 1rem;
+    top: 50%;
+    translate: 0 -50%;
+  }
+  .gallery-next {
+    inset-inline-end: 1rem;
+    top: 50%;
+    translate: 0 -50%;
+  }
+  .gallery-zoom {
+    inset-inline-end: 1rem;
+    top: 1rem;
+  }
+  .gallery-count {
+    position: absolute;
+    inset-inline-end: 1.25rem;
+    bottom: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-3);
   }
   .gallery-thumbs {
-    display: flex;
-    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
     margin-block-start: 0.75rem;
   }
   .thumb {
-    flex: 1;
-    height: 80px;
-    padding: 0.25rem;
-    background: #fafafa;
-    border: 2px solid transparent;
-    border-radius: 8px;
-    cursor: pointer;
+    position: relative;
+    display: block;
+    min-width: 0;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: radial-gradient(circle at 50% 60%, rgb(255 255 255 / 0.07), transparent 70%), var(--surface);
+    transition: border-color 0.25s;
   }
+  /* 图片绝对定位：缩略图大小只由 4:3 比例决定，不受图片原始尺寸影响 */
   .thumb img {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0.5rem;
+    width: calc(100% - 1rem);
+    height: calc(100% - 1rem);
     object-fit: contain;
   }
-  .thumb.active {
-    border-color: #b91c1c;  /* 当前选中的缩略图高亮 */
+  .thumb:hover {
+    border-color: var(--line-3);
+  }
+  .thumb[aria-pressed='true'] {
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 1px var(--accent-line), 0 10px 30px -14px var(--accent-glow);
   }
 
-  /* ===== 参数表 ===== */
-  .spec-table {
-    width: 100%;
-    border-collapse: collapse;
+  .detail-info {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
   }
-  .spec-table th,
-  .spec-table td {
-    padding: 0.55rem 0.5rem;
-    border-block-end: 1px solid #eee;
-    text-align: start;          /* 逻辑属性：LTR 靠左、RTL 自动靠右 */
-    vertical-align: top;
+  .detail-title {
+    margin-block: 0.9rem 1rem;
+    font-family: var(--font-mono);
+    font-size: clamp(2.4rem, 1.6rem + 3vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
   }
-  .spec-table th {
-    color: #666;
-    font-weight: 500;
+  .detail-intro {
+    max-width: 56ch;
+    font-size: 1.05rem;
+  }
+  .detail-tags {
+    margin-block: 1.4rem 1.75rem;
+  }
+  .key-specs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-lg);
+    background: var(--line);
+  }
+  .key-specs > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--surface);
+  }
+  .key-specs dt {
+    font-size: 0.78rem;
+    color: var(--text-3);
+  }
+  .key-specs dd {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .ks-value {
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2.1rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
     white-space: nowrap;
-    padding-inline-end: 1rem;
   }
-  .spec-table td {
-    font-weight: 600;
+  .ks-value small {
+    font-size: 0.55em;
+    font-weight: 700;
+    color: var(--text-3);
+  }
+  .ks-sub {
+    font-family: var(--font-label);
+    font-size: 0.74rem;
+    color: var(--text-3);
+  }
+  .detail-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-block-start: 1.75rem;
+  }
+  .trust-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.4rem;
+    margin-block-start: 1.4rem;
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+  .trust-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .trust-list svg {
+    width: 17px;
+    height: 17px;
+    color: var(--accent);
+  }
+  @media (max-width: 960px) {
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+    .detail-info {
+      position: static;
+    }
+  }
+
+  /* ---------- 2. 性能可视化 ---------- */
+  .perf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+    gap: 1rem;
+  }
+  .perf-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+  .perf-card h3 {
+    font-size: 1rem;
+  }
+  .perf-big {
+    margin-block-start: auto;
+    font-size: clamp(1.8rem, 1.4rem + 1.4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .perf-big small {
+    margin-inline-start: 0.2em;
+    font-size: 0.5em;
+    color: var(--text-3);
+  }
+  .perf-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+  .dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+  .dot--idle {
+    background: #fff;
+    box-shadow: 0 0 0 3px rgb(255 255 255 / 0.15);
+  }
+  .rpm-gauge {
+    width: 100%;
+    overflow: visible;
+  }
+  .rg-track {
+    fill: none;
+    stroke: rgb(255 255 255 / 0.1);
+    stroke-width: 10;
+  }
+  .rg-range {
+    fill: none;
+    stroke: var(--chart-1);
+    stroke-width: 10;
+    filter: drop-shadow(0 0 6px rgb(255 75 58 / 0.6));
+  }
+  .rpm-gauge line {
+    stroke: rgb(255 255 255 / 0.35);
+    stroke-width: 1.5;
+  }
+  .rpm-gauge text {
+    fill: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .rpm-gauge .rg-unit {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .rg-idle {
+    fill: #fff;
+    stroke: var(--surface);
+    stroke-width: 2;
+  }
+  .hbars {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .hbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem 0.75rem;
+    align-items: center;
+  }
+  .hbar-label {
+    grid-column: 1 / -1;
+    font-size: 0.78rem;
+    color: var(--text-3);
+  }
+  .hbar-track {
+    height: 12px;
+    overflow: hidden;
+    border-radius: 0 4px 4px 0;
+    background: rgb(255 255 255 / 0.05);
+  }
+  :global([dir='rtl']) .hbar-track {
+    border-radius: 4px 0 0 4px;
+  }
+  .hbar-fill {
+    display: block;
+    width: calc(var(--w) * 100%);
+    height: 100%;
+    border-start-end-radius: 4px;
+    border-end-end-radius: 4px;
+  }
+  .hbar-fill--a {
+    background: var(--chart-1);
+  }
+  .hbar-fill--b {
+    background: var(--chart-2);
+  }
+  .hbar-fill--muted {
+    background: rgb(255 255 255 / 0.28);
+  }
+  .hbar-val {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .lineup-bars {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .lineup-bars a {
+    display: grid;
+    grid-template-columns: 3.4rem 1fr 3rem;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.15rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  .lineup-bars a:hover {
+    color: var(--text);
+  }
+  .lb-track {
+    height: 8px;
+  }
+  .lb-fill {
+    display: block;
+    width: calc(var(--w) * 100%);
+    height: 100%;
+    border-start-end-radius: 3px;
+    border-end-end-radius: 3px;
+    background: rgb(255 255 255 / 0.18);
+  }
+  .lb-val {
+    text-align: end;
+  }
+  .lineup-bars .current a {
+    color: var(--text);
+    font-weight: 800;
+  }
+  .lineup-bars .current .lb-fill {
+    background: var(--chart-1);
+    box-shadow: 0 0 12px rgb(255 75 58 / 0.5);
+  }
+
+  /* ---------- 3. 完整参数 ---------- */
+  .specs-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+  .specs-head .btn {
+    flex: none;
+    margin-block-end: clamp(2.5rem, 2rem + 2vw, 4rem);
+  }
+  /* 两栏“瀑布流”：参数组高矮不一，用多栏布局自动填满，不留大块空白 */
+  .spec-groups {
+    columns: 2 380px;
+    column-gap: 1rem;
+  }
+  .spec-group {
+    break-inside: avoid;
+    margin-block-end: 1rem;
+    padding: 1.5rem 1.6rem 0.75rem;
+  }
+  .spec-group h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-block-end: 0.75rem;
+    font-family: var(--font-label);
+    font-size: 0.78rem;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-text);
+  }
+  :global(:lang(fa)) .spec-group h3 {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+  }
+  .spec-list > div {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+    padding-block: 0.8rem;
+    border-block-start: 1px solid var(--line);
+  }
+  .spec-list dt {
+    font-size: 0.88rem;
+    color: var(--text-3);
+  }
+  .spec-list dd {
+    font-size: 0.92rem;
+    font-weight: 650;
+    color: var(--text);
+  }
+  .specs-note {
+    margin-block-start: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  @media (max-width: 860px) {
+    .specs-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+    }
+    .specs-head .btn {
+      margin-block: -1.5rem 2rem;
+    }
+  }
+
+  /* ---------- 4. 安装尺寸 ---------- */
+  .dims {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+  }
+  .dims-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-lg);
+    background: var(--line);
+  }
+  .dims-tiles > div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    padding: 1.2rem 1.35rem;
+    background: var(--surface);
+  }
+  .dims-tiles dt {
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  .dims-tiles dd {
+    font-size: clamp(1.6rem, 1.3rem + 1vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .dims-tiles small {
+    font-size: 0.5em;
+    color: var(--text-3);
+  }
+  .dims-figure {
+    margin: 0;
+    padding: clamp(1rem, 0.5rem + 2vw, 2rem);
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 32px 32px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 32px 32px,
+      var(--surface);
+  }
+  .dims-figure svg {
+    width: 100%;
+    max-height: 420px;
+    overflow: visible;
+  }
+  .iso-edge {
+    fill: none;
+    stroke: rgb(255 255 255 / 0.7);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+  }
+  .iso-edge.hidden {
+    stroke: rgb(255 255 255 / 0.22);
+    stroke-dasharray: 5 6;
+  }
+  .iso-dim {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.4;
+  }
+  .iso-ext {
+    fill: none;
+    stroke: rgb(255 255 255 / 0.25);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  .iso-end {
+    fill: var(--accent);
+  }
+  .iso-label {
+    fill: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  @media (max-width: 900px) {
+    .dims {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- 5. 其它型号 ---------- */
+  .related-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 960px) {
+    .related-grid {
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    }
+  }
+
+  /* ---------- 放大查看 ---------- */
+  .lightbox {
+    width: min(94vw, 1100px);
+    max-width: none;
+    height: min(88vh, 860px);
+    max-height: none;
+    padding: 0;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-xl);
+    background:
+      radial-gradient(60% 60% at 50% 55%, rgb(255 255 255 / 0.1), transparent 70%),
+      var(--surface);
+    color: var(--text);
+  }
+  .lightbox::backdrop {
+    background: rgb(0 0 0 / 0.8);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .lightbox[open] {
+    overflow: hidden;
+  }
+  .lightbox img {
+    position: absolute;
+    inset: 0;
+    width: 86%;
+    height: 86%;
+    margin: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.6));
+  }
+  .lightbox-close {
+    position: absolute;
+    inset-inline-end: 1rem;
+    top: 1rem;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    background: rgb(10 11 14 / 0.7);
+    color: var(--text);
+  }
+  .lightbox-close svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ---------- 打印（参数单） ---------- */
+  .print-head {
+    display: none;
+  }
+  @media print {
+    .page-hero::before,
+    .page-hero::after {
+      display: none;
+    }
+    .page-hero {
+      margin: 0;
+      padding: 0 0 8mm;
+    }
+    .print-head {
+      display: flex !important;
+      align-items: center;
+      justify-content: space-between;
+      margin-block-end: 6mm;
+      padding-block-end: 4mm;
+      border-block-end: 1px solid #ccc;
+      font-size: 10pt;
+    }
+    .detail-grid {
+      grid-template-columns: 0.8fr 1fr;
+      gap: 8mm;
+      margin: 0;
+    }
+    .gallery-stage {
+      border: 1px solid #ddd;
+      background: #fff;
+    }
+    .gallery-img {
+      filter: none;
+    }
+    .gallery-img:not(.is-active) {
+      display: none;
+    }
+    .gallery-cc {
+      display: none;
+    }
+    .detail-info {
+      position: static;
+    }
+    .key-specs,
+    .key-specs > div {
+      background: #fff;
+      border-color: #ccc;
+    }
+    .section {
+      padding-block: 6mm;
+    }
+    .spec-groups {
+      columns: 2;
+    }
+    .spec-group {
+      border: 1px solid #ddd;
+    }
+    .spec-group h3 {
+      color: #b8161b;
+    }
+    .dims-figure {
+      background: #fff;
+      border: 1px solid #ddd;
+    }
+    .iso-edge {
+      stroke: #333;
+    }
+    .iso-edge.hidden {
+      stroke: #aaa;
+    }
+    .iso-label {
+      fill: #000;
+    }
+    .dims-tiles,
+    .dims-tiles > div {
+      background: #fff;
+    }
+    .trust-list svg {
+      color: #b8161b;
+    }
+    .print-contact {
+      display: flex !important;
+      flex-wrap: wrap;
+      gap: 2mm 8mm;
+      margin-block-start: 6mm;
+      padding-block-start: 4mm;
+      border-block-start: 1px solid #ccc;
+      font-size: 10pt;
+    }
+    .lightbox {
+      display: none !important;
+    }
   }
 </style>

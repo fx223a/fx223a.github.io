@@ -1,19 +1,24 @@
 ---
 // ============================================================
-// 询价页（多语言）—— WhatsApp 优先（客户 2026-08-08 决定）
-// 网址：/ru/inquiry/ 、/en/inquiry/ 、/zh/inquiry/
-// 流程：价格不放网站。页面把客户引到 WhatsApp/Telegram 私聊；
-//       下面的表单是“消息生成器”：填完后一键打开 WhatsApp，
-//       消息内容已按字段预填好，客户点发送即可（无任何后端）。
-//  - 无 JS 时表单自动隐藏（hidden，由脚本移除），直连按钮始终可用——
-//    绝不会出现“提交了却没人收到”或“数据拼进地址栏”的情况。
+// 询价页（多语言）—— WhatsApp 优先（客户 2026-08-08 决定：价格不上网站，私聊谈）
+// 网址：/ru/inquiry/ 、/en/inquiry/ 、/zh/inquiry/ 、/fa/inquiry/
+// 左侧：三种直连方式（WhatsApp / Telegram / 邮箱），电脑端带二维码，手机一扫即聊
+// 右侧：“询价消息生成器”——填完表单，实时预览消息，可一键发到 WhatsApp、用邮件发送或复制文本。
+//  - 无任何后端：消息只在访客自己的设备上生成，不经过我们的服务器。
+//  - 无 JS 时表单整体隐藏，直连按钮始终可用——绝不会出现“提交了却没人收到”。
 //  - 支持从详情页带型号跳转：?model=yt-550 时下拉自动选中。
 // ============================================================
+import Check from '@lucide/astro/icons/check';
+import Mail from '@lucide/astro/icons/mail';
+import Copy from '@lucide/astro/icons/copy';
+import ShieldCheck from '@lucide/astro/icons/shield-check';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BrandIcon from '../../../components/BrandIcon.astro';
+import QrCode from '../../../components/QrCode.astro';
 import { locales } from '../../../i18n/config';
 import { useTranslations } from '../../../i18n/utils';
-import { CONTACT } from '../../../config/site';
-import products from '../../../data/products.json';
+import { CONTACT, SALES } from '../../../config/site';
+import { products } from '../../../lib/products';
 
 export function getStaticPaths() {
   return locales.map((lang) => ({ params: { lang } }));
@@ -21,217 +26,566 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
+const home = `/${lang}/`;
+const site = Astro.site?.origin ?? '';
+const tips = [1, 2, 3, 4, 5].map((n) => t(`inquiry_tip_${n}`));
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: t('nav_home'), item: `${site}${home}` },
+      { '@type': 'ListItem', position: 2, name: t('inquiry_title'), item: `${site}/${lang}/inquiry/` },
+    ],
+  },
+];
 ---
-<BaseLayout title={t('inquiry_title')} description={t('inquiry_intro')}>
-  <section class="inquiry">
-    <h1>{t('inquiry_title')}</h1>
-    <p class="inquiry-intro">{t('inquiry_intro')}</p>
-
-    <!-- ===== 直连通道（主入口，无 JS 也可用）===== -->
-    <div class="contact-buttons">
-      <a class="btn btn-wa" href={CONTACT.whatsappLink} rel="noopener">
-        {t('inquiry_whatsapp_cta')}
-      </a>
-      <a class="btn btn-outline" href={CONTACT.telegramLink} rel="noopener">
-        Telegram: {CONTACT.phoneDisplay}
-      </a>
-      <a class="btn btn-outline" href={`mailto:${CONTACT.email}`}>
-        {CONTACT.email}
-      </a>
+<BaseLayout title={t('inquiry_title')} description={t('inquiry_intro')} jsonLd={jsonLd} hideFloatingWhatsapp>
+  <section class="page-hero" aria-labelledby="inquiry-title">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href={home}>{t('nav_home')}</a></li>
+          <li><span aria-current="page">{t('inquiry_title')}</span></li>
+        </ol>
+      </nav>
+      <p class="eyebrow" style="margin-block-start:2rem">{t('inquiry_eyebrow')}</p>
+      <h1 class="page-title text-steel" id="inquiry-title">{t('inquiry_title')}</h1>
+      <p class="page-lead">{t('inquiry_intro')}</p>
     </div>
+  </section>
 
-    <p class="or-form" id="orForm" hidden>{t('inquiry_or_form')}</p>
+  <section class="section inquiry-section">
+    <div class="container inquiry-grid">
+      <!-- ===== 左：直连通道（主入口，无 JS 也可用）===== -->
+      <div class="channels">
+        <article class="card channel channel--wa" data-reveal>
+          <div class="channel-main">
+            <div class="channel-head">
+              <span class="channel-icon channel-icon--wa"><BrandIcon name="whatsapp" /></span>
+              <div>
+                <h2>WhatsApp</h2>
+                <p class="channel-id">{CONTACT.phoneDisplay}</p>
+              </div>
+            </div>
+            <p class="channel-desc">{t('channel_wa_desc')}</p>
+            <a class="btn btn--wa" href={CONTACT.whatsappLink} target="_blank" rel="noopener">
+              <BrandIcon name="whatsapp" />
+              {t('inquiry_whatsapp_cta')}
+            </a>
+          </div>
+          <div class="channel-qr">
+            <QrCode value={CONTACT.whatsappLink} label={`WhatsApp — ${t('channel_scan')}`} />
+            <span>{t('channel_scan')}</span>
+          </div>
+        </article>
 
-    <!-- ===== 询价消息生成器（增强功能，需 JS；无 JS 时整体隐藏）=====
-         data-wa-number 提供纯数字号码给脚本拼 wa.me 链接；
-         提交时把各字段拼成一条结构化消息，打开 WhatsApp 预填好，客户按一下发送即可。 -->
-    <form
-      id="inquiryForm"
-      class="inquiry-form"
-      hidden
-      data-wa-number={CONTACT.phoneDigits}
-      data-msg-opened={t('form_whatsapp_opened')}
-    >
-      <div class="field">
-        <label for="name">{t('form_name')}</label>
-        <input type="text" id="name" name="name" autocomplete="name" maxlength="100" />
+        <!-- 销售人员（2026-10-23 新增，数据在 src/config/site.ts 的 SALES） -->
+        {SALES.map((s) => (
+          <article class="card channel channel--person" data-reveal>
+            <div class="channel-main">
+              <div class="channel-head">
+                <span class="channel-icon channel-icon--person" aria-hidden="true">{s.name.charAt(0)}</span>
+                <div>
+                  <h2>{s.name}</h2>
+                  <p class="channel-role">{t('sales_role')}</p>
+                </div>
+              </div>
+              <p class="channel-desc">{t('sales_desc')}</p>
+              <ul class="channel-lines">
+                <li>
+                  <BrandIcon name="whatsapp" size={18} />
+                  <a class="channel-id" href={s.whatsappLink} target="_blank" rel="noopener">{s.phoneDisplay}</a>
+                </li>
+                <li>
+                  <Mail aria-hidden="true" />
+                  <a class="channel-id" href={`mailto:${s.email}`}>{s.email}</a>
+                </li>
+              </ul>
+              <a class="btn btn--wa" href={s.whatsappLink} target="_blank" rel="noopener">
+                <BrandIcon name="whatsapp" />
+                {t('sales_chat', { name: s.name })}
+              </a>
+            </div>
+            <div class="channel-qr">
+              <QrCode value={s.whatsappLink} label={`${s.name} · WhatsApp — ${t('channel_scan')}`} />
+              <span>{t('channel_scan')}</span>
+            </div>
+          </article>
+        ))}
+
+        <article class="card channel" data-reveal style="--i:1">
+          <div class="channel-main">
+            <div class="channel-head">
+              <span class="channel-icon channel-icon--tg"><BrandIcon name="telegram" /></span>
+              <div>
+                <h2>Telegram</h2>
+                <p class="channel-id">{CONTACT.phoneDisplay}</p>
+              </div>
+            </div>
+            <p class="channel-desc">{t('channel_tg_desc')}</p>
+            <a class="btn btn--ghost" href={CONTACT.telegramLink} target="_blank" rel="noopener">
+              <BrandIcon name="telegram" />
+              {t('channel_open')}
+            </a>
+          </div>
+          <div class="channel-qr">
+            <QrCode value={CONTACT.telegramLink} label={`Telegram — ${t('channel_scan')}`} />
+            <span>{t('channel_scan')}</span>
+          </div>
+        </article>
+
+        <article class="card channel" data-reveal style="--i:2">
+          <div class="channel-main">
+            <div class="channel-head">
+              <span class="channel-icon"><Mail aria-hidden="true" /></span>
+              <div>
+                <h2>{t('cta_email')}</h2>
+                <p class="channel-id">{CONTACT.email}</p>
+              </div>
+            </div>
+            <p class="channel-desc">{t('channel_mail_desc')}</p>
+            <a class="btn btn--ghost" href={`mailto:${CONTACT.email}`}>
+              <Mail aria-hidden="true" />
+              {t('channel_write')}
+            </a>
+          </div>
+        </article>
+
+        <aside class="card tips" data-reveal style="--i:3" aria-labelledby="tips-title">
+          <h2 id="tips-title">{t('inquiry_tips_title')}</h2>
+          <ul>
+            {tips.map((tip) => (
+              <li><Check aria-hidden="true" />{tip}</li>
+            ))}
+          </ul>
+        </aside>
       </div>
 
-      <div class="field">
-        <label for="company">{t('form_company')}</label>
-        <input type="text" id="company" name="company" autocomplete="organization" maxlength="200" />
+      <!-- ===== 右：询价消息生成器（需 JS；无 JS 时整块隐藏）===== -->
+      <div class="card form-card" data-reveal style="--i:1">
+        <h2 class="form-title">{t('form_title')}</h2>
+        <p class="form-intro">{t('inquiry_or_form')}</p>
+
+        <form
+          id="inquiryForm"
+          class="inquiry-form"
+          hidden
+          novalidate
+          data-wa-number={CONTACT.phoneDigits}
+          data-email={CONTACT.email}
+          data-subject={t('form_email_subject')}
+          data-header={t('msg_header')}
+          data-msg-opened={t('form_whatsapp_opened')}
+          data-copied={t('form_copied')}
+        >
+          <div class="field">
+            <label for="name">{t('form_name')}</label>
+            <input type="text" id="name" name="name" autocomplete="name" maxlength="100" />
+          </div>
+          <div class="field">
+            <label for="company">{t('form_company')}</label>
+            <input type="text" id="company" name="company" autocomplete="organization" maxlength="200" />
+          </div>
+          <div class="field">
+            <label for="country">{t('form_country')}</label>
+            <input type="text" id="country" name="country" autocomplete="country-name" maxlength="80" />
+          </div>
+          <div class="field">
+            <label for="quantity">{t('form_quantity')}</label>
+            <input type="number" id="quantity" name="quantity" min="1" step="1" inputmode="numeric" />
+          </div>
+          <div class="field field-full">
+            <label for="model">{t('form_model')}</label>
+            <!-- 型号选项由 products.json 自动生成：value 用型号 id，显示用型号名 -->
+            <select id="model" name="model">
+              <option value="">{t('form_model_placeholder')}</option>
+              {products.map((p) => (
+                <option value={p.id} data-model-name={p.model}>{p.model}</option>
+              ))}
+            </select>
+          </div>
+          <fieldset class="field field-full fuel-field">
+            <legend class="field-label">{t('form_fuel')}</legend>
+            <div class="pill-group">
+              <label><input type="radio" name="fuel" value="" checked /><span>{t('form_fuel_any')}</span></label>
+              <label><input type="radio" name="fuel" value={t('form_fuel_carb')} /><span>{t('form_fuel_carb')}</span></label>
+              <label><input type="radio" name="fuel" value={t('form_fuel_efi')} /><span>{t('form_fuel_efi')}</span></label>
+            </div>
+          </fieldset>
+          <div class="field field-full">
+            <label for="message">{t('form_message')}</label>
+            <textarea id="message" name="message" rows="4" maxlength="1500"></textarea>
+          </div>
+
+          <div class="preview field-full" aria-live="off">
+            <p class="field-label">{t('form_preview')}</p>
+            <pre data-preview></pre>
+          </div>
+
+          <div class="form-actions field-full">
+            <button type="submit" class="btn btn--wa btn--lg">
+              <BrandIcon name="whatsapp" />
+              {t('form_submit_whatsapp')}
+            </button>
+            <button type="button" class="btn btn--ghost" data-send-email>
+              <Mail aria-hidden="true" />
+              {t('form_submit_email')}
+            </button>
+            <button type="button" class="btn btn--ghost" data-copy>
+              <Copy aria-hidden="true" />
+              <span data-copy-label>{t('form_copy')}</span>
+            </button>
+          </div>
+          <p class="privacy field-full">
+            <ShieldCheck aria-hidden="true" />
+            {t('form_privacy_note')}
+          </p>
+        </form>
+
+        <!-- 打开 WhatsApp 后的提示（role=status：读屏软件自动朗读） -->
+        <p id="waOpened" class="wa-opened" role="status" aria-live="polite" hidden></p>
       </div>
-
-      <div class="field">
-        <label for="model">{t('form_model')}</label>
-        <!-- 型号选项由 products.json 自动生成：value 用型号 id，显示用型号名 -->
-        <select id="model" name="model">
-          <option value="">{t('form_model_placeholder')}</option>
-          {products.map((p) => (
-            <option value={p.id} data-model-name={p.model}>{p.model}</option>
-          ))}
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="quantity">{t('form_quantity')}</label>
-        <input type="number" id="quantity" name="quantity" min="1" step="1" />
-      </div>
-
-      <div class="field field-full">
-        <label for="message">{t('form_message')}</label>
-        <textarea id="message" name="message" rows="4" maxlength="1500"></textarea>
-      </div>
-
-      <button type="submit" class="btn btn-wa">{t('form_submit_whatsapp')}</button>
-    </form>
-
-    <!-- 打开 WhatsApp 后的提示（role=status：读屏软件自动朗读） -->
-    <p id="waOpened" class="wa-opened" role="status" aria-live="polite" hidden></p>
+    </div>
   </section>
 </BaseLayout>
 
 <script>
-  // 有 JS 才显示表单（无 JS 用户直接用上方的直连按钮，不会遇到“提交了没人收到”）
+  // ============================================================
+  // 询价消息生成器：把表单拼成一条结构化消息
+  //   → 一键打开 WhatsApp（预填好，客户点发送即可）/ 用邮件发送 / 复制文本
+  // 消息只在访客自己的浏览器里生成，不发往我们的服务器。
+  // ============================================================
   const form = document.getElementById('inquiryForm') as HTMLFormElement | null;
-  const orForm = document.getElementById('orForm');
-  if (form) form.hidden = false;
-  if (orForm) orForm.hidden = false;
 
-  // 若网址带 ?model=xxx（从详情页“询价”按钮跳来），自动选中对应型号
-  const params = new URLSearchParams(window.location.search);
-  const wanted = params.get('model');
-  const select = document.getElementById('model') as HTMLSelectElement | null;
-  if (select && wanted) {
-    const opt = Array.from(select.options).find((o) => o.value === wanted);
-    if (opt) select.value = wanted;
-  }
+  if (form) {
+    form.hidden = false; // 有 JS 才显示表单
+    const preview = form.querySelector<HTMLElement>('[data-preview]');
+    const select = form.querySelector<HTMLSelectElement>('#model');
 
-  // 提交 = 把字段拼成一条消息，打开 WhatsApp（wa.me 预填文本）
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const lines: string[] = ['[Inquiry]'];
-    // 逐字段收集：用页面上的 label 文字做前缀（自动跟随当前语言）
-    form.querySelectorAll<HTMLElement>('.field').forEach((field) => {
-      const label = field.querySelector('label')?.textContent?.trim() ?? '';
-      const input = field.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
-      if (!input || !input.value) return;
-      // 型号下拉显示型号名而不是 id
-      const value = input instanceof HTMLSelectElement
-        ? (input.selectedOptions[0]?.dataset.modelName ?? input.value)
-        : input.value;
-      lines.push(`${label}: ${value}`);
+    // 若网址带 ?model=xxx（从详情页“询价”按钮跳来），自动选中对应型号
+    const wanted = new URLSearchParams(window.location.search).get('model');
+    if (select && wanted && Array.from(select.options).some((o) => o.value === wanted)) select.value = wanted;
+
+    const compose = () => {
+      const lines: string[] = [`[${form.dataset.header ?? 'Inquiry'}]`];
+      // 用页面上的 label 文字做前缀（自动跟随当前语言）
+      form.querySelectorAll<HTMLElement>('.field').forEach((field) => {
+        const label = (field.querySelector('label:not(.pill-group label), legend')?.textContent ?? '').trim();
+        let value = '';
+        const radio = field.querySelector<HTMLInputElement>('input[type=radio]:checked');
+        const input = field.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+          'input:not([type=radio]), select, textarea',
+        );
+        if (radio) value = radio.value;
+        else if (input instanceof HTMLSelectElement) value = input.value ? (input.selectedOptions[0]?.dataset.modelName ?? input.value) : '';
+        else if (input) value = input.value.trim();
+        if (value) lines.push(`${label}: ${value}`);
+      });
+      return lines.join('\n');
+    };
+
+    const update = () => {
+      if (preview) preview.textContent = compose();
+    };
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    update();
+
+    const notify = (msg: string) => {
+      const box = document.getElementById('waOpened');
+      if (box) {
+        box.textContent = msg;
+        box.hidden = false;
+      }
+    };
+
+    // 发到 WhatsApp（新标签打开 wa.me 预填文本）
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = `https://wa.me/${form.dataset.waNumber}?text=${encodeURIComponent(compose())}`;
+      window.open(url, '_blank', 'noopener');
+      notify(form.dataset.msgOpened ?? '');
     });
-    const text = encodeURIComponent(lines.join('\n'));
-    const waUrl = `https://wa.me/${form.dataset.waNumber}?text=${text}`;
-    // 新标签打开 WhatsApp；本页显示提示（含兜底指引）
-    window.open(waUrl, '_blank', 'noopener');
-    const opened = document.getElementById('waOpened');
-    if (opened) {
-      opened.textContent = form.dataset.msgOpened ?? '';
-      opened.hidden = false;
-    }
-  });
+
+    // 用邮件发送（打开访客自己的邮件程序，正文已填好）
+    form.querySelector('[data-send-email]')?.addEventListener('click', () => {
+      const subject = encodeURIComponent(form.dataset.subject ?? 'Inquiry');
+      window.location.href = `mailto:${form.dataset.email}?subject=${subject}&body=${encodeURIComponent(compose())}`;
+    });
+
+    // 复制文本（方便粘贴到 Telegram 等其它聊天工具）
+    const copyBtn = form.querySelector<HTMLButtonElement>('[data-copy]');
+    const copyLabel = form.querySelector<HTMLElement>('[data-copy-label]');
+    copyBtn?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(compose());
+        if (copyLabel) {
+          const original = copyLabel.textContent;
+          copyLabel.textContent = form.dataset.copied ?? 'OK';
+          setTimeout(() => (copyLabel.textContent = original), 2000);
+        }
+      } catch {
+        // 剪贴板不可用（少数浏览器）：选中预览文字，方便手动复制
+        if (preview) window.getSelection()?.selectAllChildren(preview);
+      }
+    });
+  }
 </script>
 
 <style>
-  /* 方向相关一律用逻辑属性，保证将来波斯语(RTL)自动镜像。 */
-  .inquiry-intro {
-    color: #555;
-    margin-block: 0 1.5rem;
-    max-width: 640px;
+  .inquiry-section {
+    padding-block-start: 0.5rem;
   }
-
-  /* 直连按钮组：WhatsApp 绿色主按钮 + Telegram/邮箱描边按钮 */
-  .contact-buttons {
+  .inquiry-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+  .channels {
+    display: grid;
+    gap: 1rem;
+  }
+  .channel {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-block-end: 2rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem;
   }
-  .contact-buttons .btn {
-    margin-block-start: 0;
+  .channel--wa {
+    border-color: rgb(37 211 102 / 0.35);
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgb(37 211 102 / 0.12), transparent 55%),
+      var(--surface);
   }
-  .btn-wa {
-    background: #25d366;   /* WhatsApp 品牌绿 */
+  .channel-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .channel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .channel-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--line-2);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.04);
+    color: var(--text);
+  }
+  .channel-icon :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+  .channel-icon--wa {
+    border-color: transparent;
+    background: var(--wa);
+    color: var(--wa-ink);
+  }
+  .channel-icon--tg {
+    border-color: transparent;
+    background: #2aabee;
     color: #fff;
   }
-  .btn-wa:hover {
-    background: #1faa52;
+  /* 销售人员：姓名首字母头像 */
+  .channel-icon--person {
+    border-color: var(--accent-line);
+    background: linear-gradient(135deg, var(--accent-deep), var(--accent-strong));
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
   }
-  .btn-outline {
-    background: transparent;
-    color: #b91c1c;
-    border: 1px solid #b91c1c;
+  .channel-role {
+    font-size: 0.82rem;
+    color: var(--accent-text);
   }
-  .btn-outline:hover {
-    background: #fef2f2;
+  .channel-lines {
+    display: grid;
+    gap: 0.45rem;
+  }
+  .channel-lines li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .channel-lines :global(svg) {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+  }
+  .channel-lines a:hover {
+    color: var(--text);
+  }
+  .channel h2 {
+    font-size: 1.15rem;
+  }
+  .channel-id {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-2);
+    direction: ltr;
+    unicode-bidi: isolate;
+    overflow-wrap: anywhere;
+  }
+  .channel-desc {
+    font-size: 0.92rem;
+  }
+  .channel-qr {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    flex: none;
+    text-align: center;
+  }
+  .channel-qr :global(.qr) {
+    width: 116px;
+    height: 116px;
+    padding: 8px;
+    border-radius: 12px;
+    background: #fff;
+  }
+  .channel-qr span {
+    max-width: 120px;
+    font-size: 0.72rem;
+    line-height: 1.3;
+    color: var(--text-3);
+  }
+  @media (max-width: 560px), (hover: none) {
+    .channel-qr {
+      display: none;
+    }
+  }
+  .tips {
+    padding: 1.5rem;
+  }
+  .tips h2 {
+    font-size: 1rem;
+    margin-block-end: 1rem;
+  }
+  .tips ul {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .tips li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+  }
+  .tips li :global(svg) {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin-block-start: 0.15rem;
+    color: var(--accent);
   }
 
-  .or-form {
-    color: #555;
-    margin-block: 0 1rem;
-    max-width: 640px;
+  .form-card {
+    display: none;
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+    padding: clamp(1.4rem, 1rem + 1.5vw, 2.25rem);
   }
-
-  /* 两列栅格；窄屏自动单列。留言框跨满整行。 */
+  :global(.js) .form-card {
+    display: block;
+  }
+  .form-title {
+    font-size: 1.5rem;
+  }
+  .form-intro {
+    margin-block: 0.5rem 1.75rem;
+    font-size: 0.95rem;
+  }
   .inquiry-form {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem 1.25rem;
-    max-width: 640px;
-  }
-  @media (max-width: 560px) {
-    .inquiry-form { grid-template-columns: 1fr; }
-  }
-  .field {
-    display: flex;
-    flex-direction: column;
+    gap: 1rem 1.1rem;
   }
   .field-full {
     grid-column: 1 / -1;
   }
-  .field label {
-    font-size: 0.85rem;
-    color: #444;
-    margin-block-end: 0.3rem;
+  .fuel-field {
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
-  .field input,
-  .field select,
-  .field textarea {
-    font: inherit;
-    padding: 0.55rem 0.65rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: #fff;
-    color: #1a1a1a;
+  .fuel-field legend {
+    margin-block-end: 0.45rem;
+    padding: 0;
   }
-  .field input:focus,
-  .field select:focus,
-  .field textarea:focus {
-    outline: 2px solid #b91c1c;
-    outline-offset: 1px;
-    border-color: #b91c1c;
+  .preview {
+    padding: 1rem 1.1rem;
+    border: 1px dashed var(--line-2);
+    border-radius: 12px;
+    background: rgb(0 0 0 / 0.25);
   }
-  .field textarea {
-    resize: vertical;
+  .preview pre {
+    margin: 0.5rem 0 0;
+    max-height: 200px;
+    overflow: auto;
+    font-family: var(--font-label);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
-
-  .inquiry-form .btn {
-    grid-column: 1 / -1;
-    justify-self: start;
-    border: none;
-    cursor: pointer;
-    margin-block-start: 0.25rem;
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
   }
-
+  .form-actions .btn--lg {
+    flex: 1 1 100%;
+  }
+  .form-actions .btn--ghost {
+    flex: 1 1 0;
+  }
+  .privacy {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  .privacy :global(svg) {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+  }
   .wa-opened {
     margin-block-start: 1rem;
-    padding: 1rem 1.25rem;
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    border-radius: 8px;
-    color: #065f46;
-    max-width: 640px;
+    padding: 1rem 1.2rem;
+    border: 1px solid rgb(37 211 102 / 0.4);
+    border-radius: 12px;
+    background: rgb(37 211 102 / 0.08);
+    font-size: 0.9rem;
+    color: #b9f5cf;
+  }
+  @media (max-width: 960px) {
+    .inquiry-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-card {
+      position: static;
+    }
+  }
+  @media (max-width: 520px) {
+    .inquiry-form {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

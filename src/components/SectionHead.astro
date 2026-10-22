@@ -1,0 +1,21 @@
+---
+// ============================================================
+// 板块标题：小标签（eyebrow）+ 金属银渐变大标题 + 说明文字
+// 用法：<SectionHead eyebrow="..." title="..." desc="..." center />
+// ============================================================
+interface Props {
+  eyebrow?: string;
+  title: string;
+  desc?: string;
+  center?: boolean;
+  /** 标题的 id（方便 aria-labelledby 引用） */
+  id?: string;
+}
+const { eyebrow, title, desc, center = false, id } = Astro.props;
+---
+<header class:list={['section-head', { 'section-head--center': center }]} data-reveal>
+  {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+  <h2 class="section-title text-steel" id={id}>{title}</h2>
+  {desc && <p class="section-desc">{desc}</p>}
+  <slot />
+</header>

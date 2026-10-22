@@ -1,20 +1,24 @@
 ---
 // ============================================================
 // 404 页面（找不到页面时显示）
-// 静态托管（如 GitHub Pages）只认根目录一个 404.html，无法按语言分开，
-// 所以这一页把三种语言的提示并列展示，各自链接回对应语言首页。
-// 页面底部的小脚本会根据来路网址里的语言段（/ru/ /en/ /zh/）把对应语言排到最前。
+// 静态托管（GitHub Pages）只认根目录一个 404.html，无法按语言分开，
+// 所以这一页把四种语言的提示并列展示，各自链接回对应语言首页。
+// 页面底部的小脚本会根据来路网址里的语言段（/ru/ /en/ /zh/ /fa/）把对应语言排到最前。
 // ============================================================
 import { dir, locales, localeNames, defaultLocale } from '../i18n/config';
 import { useTranslations } from '../i18n/utils';
+import Logo from '../components/Logo.astro';
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/vazirmatn';
 import '../styles/global.css';
 
 // 每种语言一段提示文案（页面级硬编码：404 页无法确定单一语言，且这些是通用 UI 文案）
-const messages: Record<string, { title: string; body: string; back: string }> = {
-  ru: { title: 'Страница не найдена', body: 'Такой страницы нет или она была перемещена.', back: 'На главную' },
-  en: { title: 'Page not found', body: 'This page does not exist or has been moved.', back: 'Back to home' },
-  zh: { title: '页面不存在', body: '您访问的页面不存在或已被移动。', back: '返回首页' },
-  fa: { title: 'صفحه پیدا نشد', body: 'این صفحه وجود ندارد یا منتقل شده است.', back: 'بازگشت به خانه' },
+const messages: Record<string, { title: string; body: string; back: string; products: string }> = {
+  ru: { title: 'Страница не найдена', body: 'Такой страницы нет или она была перемещена.', back: 'На главную', products: 'Все двигатели' },
+  en: { title: 'Page not found', body: 'This page does not exist or has been moved.', back: 'Back to home', products: 'All engines' },
+  zh: { title: '页面不存在', body: '您访问的页面不存在或已被移动。', back: '返回首页', products: '全部发动机' },
+  fa: { title: 'صفحه پیدا نشد', body: 'این صفحه وجود ندارد یا منتقل شده است.', back: 'بازگشت به خانه', products: 'همه موتورها' },
 };
 
 const t = useTranslations(defaultLocale);
@@ -25,42 +29,114 @@ const t = useTranslations(defaultLocale);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#07080a" />
     <title>404 · {t('site_name')}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
   </head>
   <body>
-    <main class="site-main nf-main" id="main">
+    <main class="nf" id="main">
+      <div class="nf-bg" aria-hidden="true"></div>
+      <a class="logo nf-logo" href={`/${defaultLocale}/`} aria-label={t('site_name')}>
+        <Logo />
+      </a>
       <p class="nf-code" aria-hidden="true">404</p>
-      {locales.map((loc) => (
-        <section class="nf-block" id={`nf-${loc}`} lang={loc} dir={dir(loc)}>
-          <h2>{messages[loc].title}</h2>
-          <p>{messages[loc].body}</p>
-          <a class="btn" href={`/${loc}/`}>{messages[loc].back} ({localeNames[loc]})</a>
-        </section>
-      ))}
+      <div class="nf-list">
+        {locales.map((loc) => (
+          <section class="card nf-block" id={`nf-${loc}`} lang={loc} dir={dir(loc)}>
+            <h2>{messages[loc].title}</h2>
+            <p>{messages[loc].body}</p>
+            <div class="nf-actions">
+              <a class="btn btn--primary btn--sm" href={`/${loc}/`}>{messages[loc].back}</a>
+              <a class="btn btn--ghost btn--sm" href={`/${loc}/products/`}>{messages[loc].products}</a>
+            </div>
+            <span class="nf-lang">{localeNames[loc]}</span>
+          </section>
+        ))}
+      </div>
     </main>
 
-    <script>
+    <script is:inline>
       // 根据来路网址里的语言段，把对应语言的提示块排到最前面
-      const seg = location.pathname.split('/').filter(Boolean)[0];
-      const block = seg ? document.getElementById('nf-' + seg) : null;
-      if (block && block.parentElement) {
-        block.parentElement.insertBefore(block, block.parentElement.querySelector('.nf-block'));
-      }
+      (function () {
+        var seg = location.pathname.split('/').filter(Boolean)[0];
+        var block = seg ? document.getElementById('nf-' + seg) : null;
+        if (block && block.parentElement) block.parentElement.insertBefore(block, block.parentElement.firstElementChild);
+      })();
     </script>
 
     <style>
-      .nf-main { text-align: center; padding-block: 3rem; }
-      .nf-code {
-        font-size: 5rem;
-        font-weight: 700;
-        color: #b91c1c;
-        margin-block: 0 1rem;
-        line-height: 1;
+      .nf {
+        position: relative;
+        isolation: isolate;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem var(--gutter) 4rem;
+        overflow: hidden;
       }
-      .nf-block { margin-block-end: 2rem; }
-      .nf-block h2 { margin-block: 0 0.25rem; }
-      .nf-block p { color: #555; margin-block: 0 0.75rem; }
+      .nf-bg {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background:
+          radial-gradient(50% 45% at 50% 18%, rgb(255 60 35 / 0.22), transparent 70%),
+          linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 64px 64px,
+          linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 64px 64px;
+        -webkit-mask-image: radial-gradient(70% 60% at 50% 20%, #000 30%, transparent 80%);
+        mask-image: radial-gradient(70% 60% at 50% 20%, #000 30%, transparent 80%);
+      }
+      .nf-code {
+        margin: 2.5rem 0 2rem;
+        font-family: var(--font-mono);
+        font-size: clamp(6rem, 4rem + 10vw, 12rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.06em;
+        background: var(--grad-steel);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .nf-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        width: min(100%, 920px);
+      }
+      .nf-block {
+        position: relative;
+        padding: 1.5rem;
+      }
+      .nf-block:first-child {
+        grid-column: 1 / -1;
+        border-color: var(--accent-line);
+      }
+      .nf-block h2 {
+        font-size: 1.3rem;
+      }
+      .nf-block p {
+        margin-block: 0.4rem 1.25rem;
+      }
+      .nf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .nf-lang {
+        position: absolute;
+        inset-inline-end: 1.25rem;
+        top: 1.25rem;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: var(--text-3);
+      }
+      @media (max-width: 640px) {
+        .nf-list {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </body>
 </html>

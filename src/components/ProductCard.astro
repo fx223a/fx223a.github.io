@@ -1,0 +1,89 @@
+---
+// ============================================================
+// 产品卡片（首页 / 产品页 / 详情页“其它型号”共用）
+// 抠图发动机 + 背景大号排量数字 + 缸数/冷却标签 + 三项关键参数 + 查看详情
+// 整张卡片可点击（标题链接拉伸覆盖整张卡片，读屏软件读到的链接名就是型号）。
+// data-* 属性给产品页的“筛选 / 排序”脚本用。
+// ============================================================
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import { useTranslations, formatNumber, localizeUnit } from '../i18n/utils';
+import { products, metrics, cutout, indexLabel, type Product } from '../lib/products';
+import { responsive } from '../lib/image-size';
+
+interface Props {
+  product: Product;
+  lang: string;
+  /** 首屏内的卡片立即加载图片 */
+  eager?: boolean;
+  /** 在网格里的序号，用于入场动画依次错开 */
+  i?: number;
+  /** 标题层级：板块里用 h3，独立列表用 h2 */
+  level?: 'h2' | 'h3';
+}
+const { product, lang, eager = false, i = 0, level = 'h3' } = Astro.props;
+const t = useTranslations(lang);
+const m = metrics(product);
+const Heading = level;
+
+// 小图 + 大图：普通屏幕加载 520px 小图，视网膜屏 / 手机自动加载约 1000px 大图
+const img = responsive(cutout(product.image, 'sm'), cutout(product.image));
+const num = (v: number | null, unit: string) => (v === null ? '—' : `${formatNumber(v, lang)} ${localizeUnit(unit, lang)}`);
+
+const specs = [
+  { label: t('short_power'), value: num(m.kw, 'kW') },
+  { label: t('short_thrust'), value: num(m.thrust100, 'kg') },
+  { label: m.weightKey === 'main_machine_weight' ? t('short_weight_main') : t('short_weight'), value: num(m.weight, 'kg') },
+];
+---
+<article
+  class="card pcard"
+  data-spotlight
+  data-reveal
+  style={`--i:${i % 3}`}
+  data-cyl={product.cylinders}
+  data-cool={product.cooling}
+  data-cc={m.cc ?? 0}
+  data-kw={m.kw ?? 0}
+  data-thrust={m.thrust100 ?? 0}
+  data-weight={m.weight ?? 0}
+>
+  <div class="pcard-stage">
+    <span class="pcard-cc" aria-hidden="true">{m.cc}</span>
+    <img
+      src={img.src}
+      srcset={img.srcset}
+      sizes="(max-width: 640px) 88vw, (max-width: 1080px) 45vw, 300px"
+      alt={`${product.model} — ${t('product_image_alt')}`}
+      width={img.width}
+      height={img.height}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+  </div>
+  <div class="pcard-body">
+    <div class="tag-row">
+      <span class="tag tag--mono">{product.cylinders === 4 ? t('filter_four') : t('filter_twin')}</span>
+      <span class="tag tag--mono">{product.cooling === 'water' ? t('filter_water') : t('filter_air')}</span>
+    </div>
+    <div class="pcard-head">
+      <Heading class="pcard-title">
+        <a class="pcard-link" href={`/${lang}/products/${product.id}/`}>{product.model}</a>
+      </Heading>
+      <span class="pcard-index" aria-hidden="true" dir="ltr">{indexLabel(product)} / {String(products.length).padStart(2, '0')}</span>
+    </div>
+    <dl class="pcard-specs">
+      {specs.map((s) => (
+        <div>
+          <dt>{s.label}</dt>
+          <dd><bdi>{s.value}</bdi></dd>
+        </div>
+      ))}
+    </dl>
+    <div class="pcard-foot">
+      <span class="pcard-cta" aria-hidden="true">
+        {t('view_details')}
+        <ArrowRight aria-hidden="true" />
+      </span>
+    </div>
+  </div>
+</article>

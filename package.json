@@ -7,15 +7,30 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "find public -name .DS_Store -delete",
+    "prebuild": "node scripts/clean-ds-store.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "check:placeholders": "node scripts/check-placeholders.mjs",
-    "deploy:check": "npm run check:placeholders && npm run build",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "deploy:check": "npm run check:placeholders && npm run check:i18n && npm run build",
+    "images:cutout": "python scripts/cutout_products.py",
+    "images:icons": "node scripts/make-icons.mjs",
+    "images:og": "node scripts/make-og.mjs",
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.0.9"
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/manrope": "5.3.0",
+    "@fontsource-variable/vazirmatn": "5.3.0",
+    "@lucide/astro": "1.50.0",
+    "astro": "^7.3.8",
+    "qrcode": "1.5.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  },
+  "devDependencies": {
+    "sharp": "0.35.5"
   }
 }

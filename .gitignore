@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # 报价单（含价格，绝不进公开仓库）
 *.xlsx
+
+# 抠图工具的 Python 虚拟环境（scripts/cutout_products.py 用，体积大，不进仓库）
+.venv-cutout/

@@ -1,13 +1,40 @@
 ---
 // ============================================================
 // 首页（多语言）
-// 结构：Hero → 主力型号展示 → 为什么选择我们 → 关于我们 → 服务与保障 → 询价引导。
-// 全部为真实内容（客户 2026-08-08 提供）；工厂/资质/应用/案例四个板块等资料齐了再加回。
+// 结构：
+//   1. 大图区：发动机“仪表盘”展台（转速表圆环高亮该型号真实转速范围 + 型号切换 + 参数数字动画）
+//   2. 滚动卖点条
+//   3. 产品线（7 张产品卡片）
+//   4. 全系性能对比图（静推力 / 功率 / 最大起飞重量，可切换；附表格视图）
+//   5. 为什么选择我们（6 项，全部来自真实参数）
+//   6. 关于我们（客户提供的真实简介 + 大数字 + 三条要点）
+//   7. 服务与保障   8. 下单流程   9. 常见问题   10. 询价横幅
+// ★ 全部为真实内容：数字都来自客户提供的资料或 products.json，绝不编造。
+//   工厂/资质/应用/案例四个板块等客户资料齐了再加回（i18n 标题 key 都还在）。
 // ============================================================
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import Gauge from '@lucide/astro/icons/gauge';
+import Layers from '@lucide/astro/icons/layers';
+import Fuel from '@lucide/astro/icons/fuel';
+import Mountain from '@lucide/astro/icons/mountain';
+import ArrowLeftRight from '@lucide/astro/icons/arrow-left-right';
+import Fan from '@lucide/astro/icons/fan';
+import ShieldCheck from '@lucide/astro/icons/shield-check';
+import Truck from '@lucide/astro/icons/truck';
+import Wrench from '@lucide/astro/icons/wrench';
+import Settings2 from '@lucide/astro/icons/settings-2';
+import Plus from '@lucide/astro/icons/plus';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SectionHead from '../../components/SectionHead.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Ticker from '../../components/Ticker.astro';
+import CtaBand from '../../components/CtaBand.astro';
+import BrandIcon from '../../components/BrandIcon.astro';
 import { locales } from '../../i18n/config';
-import { useTranslations, localizeSpecValue } from '../../i18n/utils';
-import products from '../../data/products.json';
+import { useTranslations, formatNumber, formatStat, localizeUnit, numberLocaleOf } from '../../i18n/utils';
+import { products, metrics, cutout, shortModel } from '../../lib/products';
+import { responsive } from '../../lib/image-size';
+import { CONTACT } from '../../config/site';
 
 export function getStaticPaths() {
   return locales.map((lang) => ({ params: { lang } }));
@@ -15,219 +42,1710 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
+const u = (unit: string) => localizeUnit(unit, lang);
+const num = (v: number | null) => (v === null ? '—' : formatNumber(v, lang));
 
-// 【首页主推型号】默认取入门/中端/顶配三款代表整条产品线。
-// 想换主推型号，改这个 id 列表即可（对应 CONTENT-TODO I1，待客户确认）。
-const featuredIds = ['yt-120', 'yt-350', 'yt-730'];
-const featured = featuredIds
-  .map((id) => products.find((p) => p.id === id))
-  .filter(Boolean) as typeof products;
+// ------------------------------------------------------------
+// 1) 展台数据：每个型号的关键参数（全部来自 products.json）
+// ------------------------------------------------------------
+const DEFAULT_ID = 'yt-730'; // 打开页面时先展示旗舰型号
+// 展台里发动机图的显示宽度（告诉浏览器该挑小图还是大图）
+const STAGE_SIZES = '(max-width: 1080px) 62vw, 360px';
+const stage = products.map((p) => {
+  const m = metrics(p);
+  // 小图 + 大图（视网膜屏自动用大图）
+  return { p, m, img: responsive(cutout(p.image, 'sm'), cutout(p.image)) };
+});
+const active = stage.find((s) => s.p.id === DEFAULT_ID) ?? stage[0];
 
-// 小帮手：按 key 取某型号的参数值（数值经单位本地化，俄语显示 л.с./см³ 等）
-function getSpec(product: { specs: { key: string; value: string }[] }, key: string) {
-  const found = product.specs.find((s) => s.key === key);
-  return found ? localizeSpecValue(found.value, lang) : null;
+// 转速表几何：0–8000 rpm 映射到 270° 圆弧（左下 → 顶部 → 右下）
+const RPM_MAX = 8000;
+const C = 300; // 圆心
+const RING = 272; // 量程圆弧半径
+const START = 135; // 起始角（度）
+const SWEEP = 270; // 总角度
+const rad = (deg: number) => (deg * Math.PI) / 180;
+const rpmDeg = (rpm: number) => (rpm / RPM_MAX) * SWEEP; // 相对起点的角度
+const polar = (rpm: number, r: number) => {
+  const a = rad(START + rpmDeg(rpm));
+  return [C + r * Math.cos(a), C + r * Math.sin(a)];
+};
+const ticks: { x1: number; y1: number; x2: number; y2: number; major: boolean }[] = [];
+for (let rpm = 0; rpm <= RPM_MAX; rpm += 250) {
+  const major = rpm % 1000 === 0;
+  const [x1, y1] = polar(rpm, RING - 14 - (major ? 14 : 6));
+  const [x2, y2] = polar(rpm, RING - 14);
+  ticks.push({ x1, y1, x2, y2, major });
 }
+const tickLabels = Array.from({ length: RPM_MAX / 1000 + 1 }, (_, i) => {
+  const [x, y] = polar(i * 1000, RING - 52);
+  return { x, y, v: i };
+});
+const rpmArc = (rpm: [number, number] | null) => {
+  const [lo, hi] = rpm ?? [0, 0];
+  return { a: rpmDeg(lo), b: rpmDeg(hi) };
+};
+const activeArc = rpmArc(active.m.rpm);
+const rpmText = (rpm: [number, number] | null) => (rpm ? `${num(rpm[0])}–${num(rpm[1])}` : '—');
+const weightLabel = (m: (typeof stage)[number]['m']) => (m.weightKey === 'main_machine_weight' ? t('short_weight_main') : t('short_weight'));
+
+// ------------------------------------------------------------
+// 2) 性能对比图：坐标轴取略大于最大值的整数，保证条形比例诚实
+// ------------------------------------------------------------
+const axes: Record<'thrust' | 'power' | 'mtow', number[]> = {
+  thrust: [0, 20, 40, 60, 80],
+  power: [0, 10, 20, 30, 40, 50],
+  mtow: [0, 50, 100, 150, 200, 250, 300],
+};
+const axisMax = (k: keyof typeof axes) => axes[k][axes[k].length - 1];
+const chartRows = products.map((p) => {
+  const m = metrics(p);
+  return {
+    p,
+    m,
+    thrustA: (m.thrust100 ?? 0) / axisMax('thrust'),
+    thrustB: (m.thrust1800 ?? 0) / axisMax('thrust'),
+    power: (m.kw ?? 0) / axisMax('power'),
+    mtow: (m.mtow ?? 0) / axisMax('mtow'),
+  };
+});
+const axisUnit = { thrust: u('kg'), power: u('kW'), mtow: u('kg') };
+
+// ------------------------------------------------------------
+// 3) 其它板块的数据
+// ------------------------------------------------------------
+const strengths = [
+  { icon: Gauge, title: 'home_strength_range_title', text: 'home_strength_range_text' },
+  { icon: Layers, title: 'home_strength_config_title', text: 'home_strength_config_text' },
+  { icon: Fuel, title: 'home_strength_fuel_title', text: 'home_strength_fuel_text' },
+  { icon: Mountain, title: 'home_strength_altitude_title', text: 'home_strength_altitude_text' },
+  { icon: ArrowLeftRight, title: 'home_strength_mount_title', text: 'home_strength_mount_text' },
+  { icon: Fan, title: 'home_strength_prop_title', text: 'home_strength_prop_text' },
+];
+const services = [
+  { icon: ShieldCheck, title: 'home_service_warranty_title', text: 'home_service_warranty_text' },
+  { icon: Truck, title: 'home_service_delivery_title', text: 'home_service_delivery_text' },
+  { icon: Wrench, title: 'home_service_support_title', text: 'home_service_support_text' },
+  { icon: Settings2, title: 'home_service_custom_title', text: 'home_service_custom_text' },
+];
+const steps = [1, 2, 3, 4, 5];
+const faqs = [1, 2, 3, 4, 5, 6, 7, 8];
+
+// 常见问题的结构化数据（问答都在页面上可见）
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((n) => ({
+    '@type': 'Question',
+    name: t(`faq_${n}_q`),
+    acceptedAnswer: { '@type': 'Answer', text: t(`faq_${n}_a`) },
+  })),
+};
 ---
-<BaseLayout title={t('nav_home')}>
-  <!-- ===== Hero ===== -->
-  <section class="hero">
-    <h1>{t('home_hero_title')}</h1>
-    <p>{t('home_hero_subtitle')}</p>
-    <a class="btn" href={`/${lang}/products/`}>{t('home_hero_cta')}</a>
-  </section>
+<BaseLayout jsonLd={[faqLd]}>
+  <!-- ======================================================
+       1. 大图区：文案 + 发动机“仪表盘”展台
+       ====================================================== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-grid"></div>
+      <div class="hero-glow hero-glow--a"></div>
+      <div class="hero-glow hero-glow--b"></div>
+    </div>
 
-  <!-- ===== 主力型号展示 ===== -->
-  <section class="home-section">
-    <h2>{t('home_featured_title')}</h2>
-    <p class="section-sub">{t('home_featured_subtitle')}</p>
-
-    <div class="featured-grid">
-      {featured.map((product) => (
-        <a class="featured-card" href={`/${lang}/products/${product.id}/`}>
-          <div class="featured-photo">
-            {/* 主推卡片在首屏内：eager 立即加载（lazy 会拖慢首屏 LCP） */}
-            <img src={product.image} alt={`${product.model} — ${t('product_image_alt')}`} loading="eager" decoding="async" />
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow" data-reveal>{t('hero_eyebrow')}</p>
+        <h1 class="hero-title" id="hero-title" data-reveal style="--i:1">
+          <span class="text-steel">{t('hero_title_a')}</span>{' '}
+          <span class="text-accent">{t('hero_title_b')}</span>
+        </h1>
+        <p class="hero-lead" data-reveal style="--i:2">{t('home_hero_subtitle')}</p>
+        <div class="hero-ctas" data-reveal style="--i:3">
+          <a class="btn btn--primary btn--lg" href={`/${lang}/products/`}>
+            {t('home_hero_cta')}
+            <ArrowRight class="icon-dir" aria-hidden="true" />
+          </a>
+          <a class="btn btn--ghost btn--lg" href={CONTACT.whatsappLink} target="_blank" rel="noopener">
+            <BrandIcon name="whatsapp" />
+            {t('cta_chat_whatsapp')}
+          </a>
+        </div>
+        <!-- 真实数字（客户 2026-08-08 提供）：十年经验 / 6 万台+ / 7 款 / 质保 12 个月 -->
+        <dl class="hero-stats" data-reveal style="--i:4">
+          <div>
+            <dt>{t('hero_stat_years')}</dt>
+            <dd>{formatStat(10, lang)}</dd>
           </div>
-          <h3>{product.model}</h3>
-          {/* <bdi>：参数值是拉丁字符，防止在波斯语(RTL)页面里排乱 */}
-          <dl class="featured-specs">
-            <div><dt>{t('spec_power')}</dt><dd><bdi>{getSpec(product, 'power')}</bdi></dd></div>
-            <div><dt>{t('spec_displacement')}</dt><dd><bdi>{getSpec(product, 'displacement')}</bdi></dd></div>
-            <div><dt>{t('spec_static_thrust_100m')}</dt><dd><bdi>{getSpec(product, 'static_thrust_100m')}</bdi></dd></div>
-          </dl>
+          <div>
+            <dt>{t('hero_stat_units')}</dt>
+            <dd>{formatStat(60000, lang)}<span>+</span></dd>
+          </div>
+          <div>
+            <dt>{t('hero_stat_models')}</dt>
+            <dd>{formatStat(products.length, lang)}</dd>
+          </div>
+          <div>
+            <dt>{t('hero_stat_warranty')}</dt>
+            <dd>{formatStat(12, lang)}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- 发动机展台：数据全部写在按钮的 data-* 上，脚本切换时读取 -->
+      <div class="hero-stage" data-stage data-locale={numberLocaleOf(lang)} role="region" aria-label={t('stage_label')} data-reveal style="--i:2">
+        <div class="stage-head">
+          <div>
+            <p class="stage-model" data-read="model" aria-live="polite">{active.p.model}</p>
+            <p class="stage-tags">
+              <span data-read="cyl">{active.p.cylinders === 4 ? t('filter_four') : t('filter_twin')}</span>
+              <span aria-hidden="true">·</span>
+              <span data-read="cool">{active.p.cooling === 'water' ? t('filter_water') : t('filter_air')}</span>
+            </p>
+          </div>
+          <a class="link-arrow stage-link" data-read="href" href={`/${lang}/products/${active.p.id}/`}>
+            {t('stage_view')}
+            <ArrowRight aria-hidden="true" />
+          </a>
+        </div>
+
+        <div class="stage-visual">
+          <svg class="stage-gauge" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="gauge-grad" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0" stop-color="#e3171c" />
+                <stop offset="0.6" stop-color="#ff4b3a" />
+                <stop offset="1" stop-color="#ff9a4a" />
+              </linearGradient>
+              <radialGradient id="gauge-disc">
+                <stop offset="0" stop-color="#ffffff" stop-opacity="0.07" />
+                <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.015" />
+                <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <circle cx={C} cy={C} r="246" fill="url(#gauge-disc)" />
+            <circle class="g-inner" cx={C} cy={C} r="196" />
+            <circle class="g-inner g-inner--2" cx={C} cy={C} r="128" />
+            <circle class="g-track" cx={C} cy={C} r={RING} pathLength="360" transform={`rotate(${START} ${C} ${C})`} />
+            <circle
+              class="g-range"
+              data-gauge-range
+              cx={C}
+              cy={C}
+              r={RING}
+              pathLength="360"
+              transform={`rotate(${START} ${C} ${C})`}
+              style={`stroke-dasharray: ${activeArc.b - activeArc.a} 360; stroke-dashoffset: ${-activeArc.a}`}
+            />
+            <g class="g-ticks">
+              {ticks.map((k) => (
+                <line class:list={{ major: k.major }} x1={k.x1.toFixed(1)} y1={k.y1.toFixed(1)} x2={k.x2.toFixed(1)} y2={k.y2.toFixed(1)} />
+              ))}
+            </g>
+            <g class="g-labels">
+              {tickLabels.map((l) => (
+                <text x={l.x.toFixed(1)} y={l.y.toFixed(1)}>{l.v}</text>
+              ))}
+            </g>
+            <g class="g-marker" data-gauge-marker style={`transform: rotate(${START + activeArc.b}deg)`}>
+              <circle cx={C + RING} cy={C} r="11" class="g-marker-halo" />
+              <circle cx={C + RING} cy={C} r="5.5" class="g-marker-dot" />
+            </g>
+          </svg>
+
+          <div class="stage-engines">
+            {stage.map((s) =>
+              s === active ? (
+                <img class="stage-engine is-active" data-engine={s.p.id} src={s.img.src} srcset={s.img.srcset} sizes={STAGE_SIZES} alt={`${s.p.model} — ${t('product_image_alt')}`} width={s.img.width} height={s.img.height} fetchpriority="high" decoding="async" />
+              ) : (
+                <img class="stage-engine" data-engine={s.p.id} data-src={s.img.src} data-srcset={s.img.srcset} sizes={STAGE_SIZES} alt={`${s.p.model} — ${t('product_image_alt')}`} width={s.img.width} height={s.img.height} decoding="async" />
+              )
+            )}
+          </div>
+
+          <div class="stage-rpm">
+            <span class="stage-rpm-label">{t('stage_rpm_label')}</span>
+            <span class="stage-rpm-value"><bdi data-read="rpm">{rpmText(active.m.rpm)}</bdi> <small>{u('rpm')}</small></span>
+          </div>
+        </div>
+
+        <dl class="stage-readout">
+          <div>
+            <dt>{t('short_power')}</dt>
+            <dd><bdi><span data-count="kw">{num(active.m.kw)}</span> <small>{u('kW')}</small></bdi></dd>
+          </div>
+          <div>
+            <dt>{t('short_thrust_100')}</dt>
+            <dd><bdi><span data-count="thrust">{num(active.m.thrust100)}</span> <small>{u('kg')}</small></bdi></dd>
+          </div>
+          <div>
+            <dt>{t('short_displacement')}</dt>
+            <dd><bdi><span data-count="cc">{num(active.m.cc)}</span> <small>{u('cc')}</small></bdi></dd>
+          </div>
+          <div>
+            <dt data-read="weight-label">{weightLabel(active.m)}</dt>
+            <dd><bdi><span data-count="weight">{num(active.m.weight)}</span> <small>{u('kg')}</small></bdi></dd>
+          </div>
+        </dl>
+
+        <!-- 型号切换按钮（需要 JS；没有 JS 时隐藏，展台固定展示旗舰型号） -->
+        <div class="stage-tabs" role="group" aria-label={t('stage_tabs_label')}>
+          {stage.map((s) => (
+            <button
+              type="button"
+              class="stage-tab"
+              aria-pressed={s === active ? 'true' : 'false'}
+              data-tab={s.p.id}
+              data-model={s.p.model}
+              data-href={`/${lang}/products/${s.p.id}/`}
+              data-cyl={s.p.cylinders === 4 ? t('filter_four') : t('filter_twin')}
+              data-cool={s.p.cooling === 'water' ? t('filter_water') : t('filter_air')}
+              data-kw={s.m.kw ?? ''}
+              data-thrust={s.m.thrust100 ?? ''}
+              data-cc={s.m.cc ?? ''}
+              data-weight={s.m.weight ?? ''}
+              data-weight-label={weightLabel(s.m)}
+              data-rpm-text={rpmText(s.m.rpm)}
+              data-arc-a={rpmArc(s.m.rpm).a}
+              data-arc-b={rpmArc(s.m.rpm).b}
+              aria-label={s.p.model}
+            >
+              <span>{shortModel(s.p)}</span>
+              <i class="stage-tab-progress" aria-hidden="true"></i>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 滚动卖点条 -->
+  <Ticker />
+
+  <!-- ======================================================
+       3. 产品线
+       ====================================================== -->
+  <section class="section" id="lineup" aria-labelledby="lineup-title">
+    <div class="container">
+      <div class="head-row">
+        <SectionHead eyebrow={t('home_lineup_eyebrow')} title={t('home_lineup_title')} desc={t('home_lineup_desc')} id="lineup-title" />
+        <a class="btn btn--ghost head-row-cta" href={`/${lang}/products/`} data-reveal>
+          {t('home_view_all')}
+          <ArrowRight class="icon-dir" aria-hidden="true" />
         </a>
-      ))}
-    </div>
-
-    <!-- 箭头字符是有方向的，RTL（波斯语）下需要镜像；.dir-arrow 的翻转规则在 global.css -->
-    <a class="btn btn-outline" href={`/${lang}/products/`}>{t('home_view_all')} <span class="dir-arrow" aria-hidden="true">→</span></a>
-  </section>
-
-  <!-- ===== 为什么选择我们（真实产品优势，非占位）===== -->
-  <section class="home-section">
-    <h2>{t('home_why_title')}</h2>
-    <div class="strength-grid">
-      <div class="strength">
-        <h3>{t('home_strength_range_title')}</h3>
-        <p>{t('home_strength_range_text')}</p>
       </div>
-      <div class="strength">
-        <h3>{t('home_strength_config_title')}</h3>
-        <p>{t('home_strength_config_text')}</p>
-      </div>
-      <div class="strength">
-        <h3>{t('home_strength_fuel_title')}</h3>
-        <p>{t('home_strength_fuel_text')}</p>
+      <div class="product-grid">
+        {products.map((p, i) => <ProductCard product={p} lang={lang} i={i} />)}
       </div>
     </div>
   </section>
 
-  <!-- ===== 关于我们（真实内容，客户 2026-08-08 提供）===== -->
-  <section class="home-section">
-    <h2>{t('home_about_title')}</h2>
-    <p class="about-text">{t('home_about_text')}</p>
-  </section>
+  <!-- ======================================================
+       4. 全系性能对比图（数据全部来自 products.json）
+       ====================================================== -->
+  <section class="section section--alt section--line" id="performance" aria-labelledby="chart-title">
+    <div class="container">
+      <SectionHead eyebrow={t('chart_eyebrow')} title={t('chart_title')} desc={t('chart_desc')} id="chart-title" />
 
-  <!-- ===== 服务与保障（真实内容，来自客户报价单，价格已剔除）===== -->
-  <section class="home-section">
-    <h2>{t('home_service_title')}</h2>
-    <div class="strength-grid">
-      <div class="strength">
-        <h3>{t('home_service_warranty_title')}</h3>
-        <p>{t('home_service_warranty_text')}</p>
-      </div>
-      <div class="strength">
-        <h3>{t('home_service_delivery_title')}</h3>
-        <p>{t('home_service_delivery_text')}</p>
-      </div>
-      <div class="strength">
-        <h3>{t('home_service_support_title')}</h3>
-        <p>{t('home_service_support_text')}</p>
-      </div>
-      <div class="strength">
-        <h3>{t('home_service_custom_title')}</h3>
-        <p>{t('home_service_custom_text')}</p>
+      <div class="lc card" data-chart data-metric="thrust" data-reveal>
+        <div class="lc-toolbar">
+          <div class="seg" role="group" aria-label={t('chart_metric_label')}>
+            <button type="button" data-metric-btn="thrust" aria-pressed="true">{t('chart_metric_thrust')}</button>
+            <button type="button" data-metric-btn="power" aria-pressed="false">{t('chart_metric_power')}</button>
+            <button type="button" data-metric-btn="mtow" aria-pressed="false">{t('chart_metric_mtow')}</button>
+          </div>
+          <ul class="lc-legend" data-for="thrust">
+            <li><span class="sw sw--a" aria-hidden="true"></span>{t('chart_legend_100')}</li>
+            <li><span class="sw sw--b" aria-hidden="true"></span>{t('chart_legend_1800')}</li>
+          </ul>
+        </div>
+
+        <div class="lc-plot">
+          <div class="lc-axes" aria-hidden="true">
+            {(Object.keys(axes) as (keyof typeof axes)[]).map((k) => (
+              <div class="lc-axis" data-for={k}>
+                {axes[k].map((v) => (
+                  <span style={`--x:${v / axisMax(k)}`}><i>{formatNumber(v, lang)}</i></span>
+                ))}
+                <b class="lc-axis-unit">{axisUnit[k]}</b>
+              </div>
+            ))}
+          </div>
+
+          <ol class="lc-rows">
+            {chartRows.map((r) => (
+              <li
+                class="lc-row"
+                style={`--thrust-a:${r.thrustA.toFixed(4)};--thrust-b:${r.thrustB.toFixed(4)};--power:${r.power.toFixed(4)};--mtow:${r.mtow.toFixed(4)}`}
+              >
+                <a class="lc-label" href={`/${lang}/products/${r.p.id}/`}>{r.p.model}</a>
+                <div class="lc-track">
+                  <span class="lc-bar lc-bar--a"></span>
+                  <span class="lc-bar lc-bar--b"></span>
+                  <span class="lc-val">
+                    <bdi data-for="thrust">{num(r.m.thrust100)} {u('kg')}</bdi>
+                    <bdi data-for="power">{num(r.m.kw)} {u('kW')}</bdi>
+                    {r.m.mtow !== null ? <bdi data-for="mtow">{num(r.m.mtow)} {u('kg')}</bdi> : <span class="lc-na" data-for="mtow">{t('chart_no_data')}</span>}
+                  </span>
+                  <!-- 悬停/聚焦时的提示框：同时显示两个海拔的推力 -->
+                  <span class="lc-tip" aria-hidden="true">
+                    <strong>{r.p.model}</strong>
+                    <span data-for="thrust"><i class="sw sw--a"></i>{t('chart_legend_100')} <b><bdi>{num(r.m.thrust100)} {u('kg')}</bdi></b></span>
+                    <span data-for="thrust"><i class="sw sw--b"></i>{t('chart_legend_1800')} <b><bdi>{num(r.m.thrust1800)} {u('kg')}</bdi></b></span>
+                    <span data-for="power">{t('chart_metric_power')} <b><bdi>{num(r.m.kw)} {u('kW')}</bdi></b></span>
+                    <span data-for="mtow">{t('chart_metric_mtow')} <b>{r.m.mtow !== null ? <bdi>{num(r.m.mtow)} {u('kg')}</bdi> : t('chart_no_data')}</b></span>
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <!-- 表格视图：图表的“无障碍孪生”，读屏用户和想看精确数字的人都能用 -->
+        <details class="lc-table">
+          <summary>{t('chart_show_table')}</summary>
+          <div class="table-scroll">
+            <table>
+              <caption class="visually-hidden">{t('chart_table_caption')}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t('compare_model')}</th>
+                  <th scope="col">{t('chart_metric_thrust')} · {t('chart_legend_100')}</th>
+                  <th scope="col">{t('chart_metric_thrust')} · {t('chart_legend_1800')}</th>
+                  <th scope="col">{t('chart_metric_power')}</th>
+                  <th scope="col">{t('chart_metric_mtow')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartRows.map((r) => (
+                  <tr>
+                    <th scope="row">{r.p.model}</th>
+                    <td><bdi>{num(r.m.thrust100)} {u('kg')}</bdi></td>
+                    <td><bdi>{num(r.m.thrust1800)} {u('kg')}</bdi></td>
+                    <td><bdi>{num(r.m.kw)} {u('kW')}</bdi></td>
+                    <td>{r.m.mtow !== null ? <bdi>{num(r.m.mtow)} {u('kg')}</bdi> : t('chart_no_data')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
     </div>
   </section>
 
-  <!-- 工厂与产能 / 质量与资质 / 应用场景 / 客户案例 四个板块：
-       客户 2026-08-08 决定先删掉尽快上线，资料齐了再加回（i18n 标题 key 都还在）。 -->
-
-  <!-- ===== 询价引导 ===== -->
-  <section class="home-section home-cta">
-    <h2>{t('home_contact_title')}</h2>
-    <p class="section-sub">{t('home_contact_text')}</p>
-    <a class="btn" href={`/${lang}/inquiry/`}>{t('nav_inquiry')}</a>
+  <!-- ======================================================
+       5. 为什么选择我们（6 项，全部来自真实参数）
+       ====================================================== -->
+  <section class="section section--line" id="why" aria-labelledby="why-title">
+    <div class="container">
+      <SectionHead eyebrow={t('home_why_eyebrow')} title={t('home_why_title')} desc={t('home_why_desc')} id="why-title" />
+      <div class="feature-grid feature-grid--3">
+        {strengths.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <article class="card feature" data-spotlight data-reveal style={`--i:${i % 3}`}>
+              <span class="icon-tile"><Icon aria-hidden="true" /></span>
+              <h3>{t(s.title)}</h3>
+              <p>{t(s.text)}</p>
+            </article>
+          );
+        })}
+      </div>
+    </div>
   </section>
+
+  <!-- ======================================================
+       6. 关于我们（客户提供的真实简介；2026-10-23 按用户要求改为“十年无人机发动机”）
+       ====================================================== -->
+  <section class="section section--alt section--line" id="about" aria-labelledby="about-title">
+    <div class="container about">
+      <div class="about-copy" data-reveal>
+        <p class="eyebrow">{t('home_about_title')}</p>
+        <h2 class="section-title text-steel" id="about-title">{t('home_about_heading')}</h2>
+        <p class="about-text">{t('home_about_text')}</p>
+        <ol class="timeline">
+          {[1, 2, 3].map((n) => (
+            <li>
+              <strong>{t(`about_tl_${n}_title`)}</strong>
+              <p>{t(`about_tl_${n}_text`)}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <dl class="about-stats">
+        <div class="card stat-card" data-reveal style="--i:0">
+          <dt class="stat-label">{t('about_stat_years')}</dt>
+          <dd class="stat-value"><span data-countup="10" data-locale={lang}>{formatStat(10, lang)}</span></dd>
+        </div>
+        <div class="card stat-card stat-card--accent" data-reveal style="--i:1">
+          <dt class="stat-label">{t('about_stat_units')}</dt>
+          <dd class="stat-value"><span data-countup="60000" data-locale={lang}>{formatStat(60000, lang)}</span>+</dd>
+        </div>
+        <div class="card stat-card" data-reveal style="--i:2">
+          <dt class="stat-label">{t('about_stat_warranty')}</dt>
+          <dd class="stat-value"><span data-countup="12" data-locale={lang}>{formatStat(12, lang)}</span></dd>
+        </div>
+        <div class="card stat-card" data-reveal style="--i:3">
+          <dt class="stat-label">{t('about_stat_models')}</dt>
+          <dd class="stat-value"><span data-countup={products.length} data-locale={lang}>{formatStat(products.length, lang)}</span></dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       7. 服务与保障（真实内容，来自客户报价单，价格已剔除）
+       ====================================================== -->
+  <section class="section section--line" id="service" aria-labelledby="service-title">
+    <div class="container">
+      <SectionHead eyebrow={t('home_service_eyebrow')} title={t('home_service_title')} desc={t('home_service_desc')} id="service-title" />
+      <div class="feature-grid feature-grid--4">
+        {services.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <article class="card feature" data-spotlight data-reveal style={`--i:${i}`}>
+              <span class="icon-tile"><Icon aria-hidden="true" /></span>
+              <h3>{t(s.title)}</h3>
+              <p>{t(s.text)}</p>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       8. 下单流程
+       ====================================================== -->
+  <section class="section section--alt section--line" id="process" aria-labelledby="process-title">
+    <div class="container">
+      <SectionHead eyebrow={t('process_eyebrow')} title={t('process_title')} id="process-title" />
+      <ol class="process">
+        {steps.map((n, i) => (
+          <li class="process-step" data-reveal style={`--i:${i}`}>
+            <span class="process-num" aria-hidden="true">{String(n).padStart(2, '0')}</span>
+            <h3>{t(`process_${n}_title`)}</h3>
+            <p>{t(`process_${n}_text`)}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- ======================================================
+       9. 常见问题（原生 <details>，不开 JS 也能展开）
+       ====================================================== -->
+  <section class="section section--line" id="faq" aria-labelledby="faq-title">
+    <div class="container faq">
+      <div class="faq-aside">
+        <SectionHead eyebrow={t('faq_eyebrow')} title={t('faq_title')} id="faq-title" />
+        <a class="btn btn--ghost" href={CONTACT.whatsappLink} target="_blank" rel="noopener" data-reveal>
+          <BrandIcon name="whatsapp" />
+          {t('cta_chat_whatsapp')}
+        </a>
+      </div>
+      <div class="faq-list">
+        {faqs.map((n, i) => (
+          <details class="faq-item" data-reveal style={`--i:${i % 4}`}>
+            <summary>
+              <span>{t(`faq_${n}_q`)}</span>
+              <Plus class="faq-icon" aria-hidden="true" />
+            </summary>
+            <div class="faq-a">
+              <p>{t(`faq_${n}_a`)}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. 询价横幅 -->
+  <CtaBand />
 </BaseLayout>
 
+<script>
+  // ============================================================
+  // 首页交互：发动机展台切换 / 性能图指标切换 / 大数字滚动
+  // ============================================================
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 数字滚动动画：从当前值滚到目标值
+  function animateNumber(el: HTMLElement, to: number, locale: string, duration = 700) {
+    const decimals = (String(to).split('.')[1] ?? '').length;
+    const fmt = new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: false });
+    const from = Number(el.dataset.value ?? to);
+    el.dataset.value = String(to);
+    if (reduceMotion || from === to) {
+      el.textContent = fmt.format(to);
+      return;
+    }
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const p = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt.format(from + (to - from) * eased);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // ---------- 1) 发动机展台 ----------
+  const stageEl = document.querySelector<HTMLElement>('[data-stage]');
+  if (stageEl) {
+    const locale = stageEl.dataset.locale ?? 'en-US';
+    const tabs = Array.from(stageEl.querySelectorAll<HTMLButtonElement>('.stage-tab'));
+    const engines = Array.from(stageEl.querySelectorAll<HTMLImageElement>('.stage-engine'));
+    const range = stageEl.querySelector<SVGCircleElement>('[data-gauge-range]');
+    const marker = stageEl.querySelector<SVGGElement>('[data-gauge-marker]');
+    const read = (name: string) => stageEl.querySelector<HTMLElement>(`[data-read="${name}"]`);
+    const counters = Array.from(stageEl.querySelectorAll<HTMLElement>('[data-count]'));
+    counters.forEach((el) => {
+      const active = tabs.find((b) => b.getAttribute('aria-pressed') === 'true');
+      el.dataset.value = active?.dataset[el.dataset.count as string] ?? '0';
+    });
+
+    const loadImg = (img: HTMLImageElement) => {
+      if (img.dataset.srcset) img.srcset = img.dataset.srcset;
+      img.src = img.dataset.src ?? '';
+    };
+    // 页面加载完后，空闲时再预加载其它型号的图片（不影响首屏速度）
+    const preload = () =>
+      engines.forEach((img) => {
+        if (img.dataset.src && !img.src) loadImg(img);
+      });
+    if ('requestIdleCallback' in window) requestIdleCallback(preload, { timeout: 3000 });
+    else setTimeout(preload, 1500);
+
+    let index = Math.max(0, tabs.findIndex((b) => b.getAttribute('aria-pressed') === 'true'));
+    let userPicked = false;
+    let inView = true;
+    // 自动轮播：当前按钮下的进度条（CSS 动画，5.5 秒）走完，就切到下一个型号。
+    // 鼠标悬停 / 键盘聚焦时 CSS 会暂停进度条，切换也就自然跟着暂停，两者永远同步。
+    const canCycle = () => !userPicked && !reduceMotion && inView;
+    const restartProgress = () => {
+      stageEl.classList.remove('is-cycling');
+      void stageEl.offsetWidth; // 强制重排，让进度条动画从头开始
+      if (canCycle()) stageEl.classList.add('is-cycling');
+    };
+
+    const show = (i: number) => {
+      index = (i + tabs.length) % tabs.length;
+      const tab = tabs[index];
+      const d = tab.dataset;
+      tabs.forEach((b) => b.setAttribute('aria-pressed', String(b === tab)));
+      engines.forEach((img) => {
+        const on = img.dataset.engine === d.tab;
+        if (on && img.dataset.src && !img.src) loadImg(img);
+        img.classList.toggle('is-active', on);
+      });
+      const set = (name: string, v?: string) => {
+        const el = read(name);
+        if (el && v !== undefined) el.textContent = v;
+      };
+      set('model', d.model);
+      set('cyl', d.cyl);
+      set('cool', d.cool);
+      set('rpm', d.rpmText);
+      set('weight-label', d.weightLabel);
+      const link = read('href') as HTMLAnchorElement | null;
+      if (link && d.href) link.href = d.href;
+      counters.forEach((el) => {
+        const v = Number(d[el.dataset.count as string]);
+        if (!Number.isNaN(v)) animateNumber(el, v, locale);
+      });
+      const a = Number(d.arcA);
+      const b = Number(d.arcB);
+      if (range) {
+        // 用 dashoffset 定位起点（若用长度为 0 的虚线段，圆头线帽会在起点多画出一个小圆点）
+        range.style.strokeDasharray = `${b - a} 360`;
+        range.style.strokeDashoffset = String(-a);
+      }
+      if (marker) marker.style.transform = `rotate(${135 + b}deg)`;
+      restartProgress();
+    };
+
+    // 进度条走完 → 下一个型号
+    stageEl.addEventListener('animationend', (e) => {
+      if ((e.target as Element).classList.contains('stage-tab-progress') && canCycle()) show(index + 1);
+    });
+
+    // 用户亲自选了型号，就停止自动轮播
+    const stopCycling = () => {
+      userPicked = true;
+      stageEl.classList.remove('is-cycling');
+    };
+    tabs.forEach((tab, i) =>
+      tab.addEventListener('click', () => {
+        stopCycling();
+        show(i);
+      }),
+    );
+    // 左右方向键切换型号（RTL 下方向相反）
+    stageEl.querySelector('.stage-tabs')?.addEventListener('keydown', (e) => {
+      const ev = e as KeyboardEvent;
+      if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+      const rtl = document.documentElement.dir === 'rtl';
+      const forward = (ev.key === 'ArrowRight') !== rtl;
+      stopCycling();
+      show(index + (forward ? 1 : -1));
+      tabs[index].focus();
+      ev.preventDefault();
+    });
+    // 展台滚出屏幕时暂停轮播（省电，也避免用户回来时“跳”了很多次）；回到屏幕内从当前型号重新计时
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([entry]) => {
+        inView = entry.isIntersecting;
+        restartProgress();
+      }).observe(stageEl);
+    } else {
+      restartProgress();
+    }
+  }
+
+  // ---------- 2) 性能对比图：切换指标 ----------
+  const chart = document.querySelector<HTMLElement>('[data-chart]');
+  chart?.querySelectorAll<HTMLButtonElement>('[data-metric-btn]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      chart.dataset.metric = btn.dataset.metricBtn;
+      chart.querySelectorAll('[data-metric-btn]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    });
+  });
+
+  // ---------- 3) 关于我们：大数字从 0 滚动到目标值 ----------
+  const countEls = document.querySelectorAll<HTMLElement>('[data-countup]');
+  if (countEls.length && 'IntersectionObserver' in window && !reduceMotion) {
+    const statLocale: Record<string, string> = { ru: 'ru-RU', en: 'en-US', zh: 'zh-CN', fa: 'fa-IR' };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const el = entry.target as HTMLElement;
+          io.unobserve(el);
+          const to = Number(el.dataset.countup);
+          const fmt = new Intl.NumberFormat(statLocale[el.dataset.locale ?? 'en'] ?? 'en-US');
+          const t0 = performance.now();
+          const step = (now: number) => {
+            const p = Math.min(1, (now - t0) / 1600);
+            const eased = 1 - Math.pow(1 - p, 4);
+            el.textContent = fmt.format(Math.round(to * eased));
+            if (p < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    countEls.forEach((el) => io.observe(el));
+  }
+</script>
+
 <style>
-  /* 方向相关一律用逻辑属性，保证将来波斯语(RTL)自动镜像。 */
-  .home-section {
-    padding-block: 2.5rem;
-    border-block-start: 1px solid #eee;
+  /* ============================================================
+     首页样式（只作用于本页）。方向相关一律用逻辑属性，波斯语(RTL)自动镜像。
+     ============================================================ */
+
+  /* ---------- 1. 大图区 ---------- */
+  .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    margin-block-start: calc(var(--header-h) * -1);
+    padding-block: calc(var(--header-h) + clamp(2rem, 1rem + 4vw, 4.5rem)) clamp(3rem, 2rem + 3vw, 5rem);
   }
-  .home-section > h2 {
-    margin-block: 0 0.5rem;
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
   }
-  .section-sub {
-    color: #555;
-    margin-block: 0 1.5rem;
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: radial-gradient(70% 70% at 70% 40%, #000 20%, transparent 75%);
+    mask-image: radial-gradient(70% 70% at 70% 40%, #000 20%, transparent 75%);
+  }
+  .hero-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+  }
+  .hero-glow--a {
+    width: 46vw;
+    height: 46vw;
+    max-width: 760px;
+    max-height: 760px;
+    inset-inline-end: -8vw;
+    top: 4%;
+    background: radial-gradient(circle, rgb(255 60 35 / 0.32), transparent 65%);
+  }
+  .hero-glow--b {
+    width: 34vw;
+    height: 34vw;
+    inset-inline-start: -10vw;
+    bottom: -12vw;
+    background: radial-gradient(circle, rgb(120 140 175 / 0.14), transparent 65%);
   }
 
-  .about-text {
-    max-width: 720px;
-    color: #333;
-    margin: 0;
-  }
-
-  /* ===== 主力型号卡片 ===== */
-  .featured-grid {
+  .hero-inner {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.25rem;
-    margin-block-end: 1.5rem;
-  }
-  .featured-card {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 1rem;
-    background: #fff;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
-  }
-  .featured-card:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-  }
-  .featured-photo {
-    height: 160px;
-    display: flex;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
     align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border-radius: 8px;
-    padding: 0.5rem;
-    margin-block-end: 0.75rem;
+    gap: clamp(2rem, 1rem + 3.5vw, 4.5rem);
   }
-  .featured-photo img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-  .featured-card h3 {
-    margin-block: 0 0.6rem;
-    color: #b91c1c;
-  }
-  .featured-specs {
-    margin: 0;
-  }
-  .featured-specs > div {
+  .hero-copy {
     display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding-block: 0.25rem;
-    border-block-start: 1px solid #f0f0f0;
-    font-size: 0.9rem;
+    flex-direction: column;
+    align-items: flex-start;
   }
-  .featured-specs dt { color: #666; }
-  .featured-specs dd { margin: 0; font-weight: 600; text-align: end; }
-
-  /* ===== 优势卡片 ===== */
-  .strength-grid {
+  .hero-title {
+    margin-block: 1.25rem 1.4rem;
+    font-size: clamp(2.5rem, 1.3rem + 3.4vw, 4.4rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: var(--tracking-tight);
+  }
+  .hero-title > span {
+    display: block;
+  }
+  .hero-title .text-accent {
+    padding-block-end: 0.08em; /* 渐变字的下伸部分（g、y）不被裁掉 */
+  }
+  :global(:lang(ru)) .hero-title {
+    font-size: clamp(2.2rem, 1.1rem + 3vw, 3.9rem);
+  }
+  :global(:lang(fa)) .hero-title {
+    line-height: 1.35;
+    font-size: clamp(2.2rem, 1.2rem + 2.9vw, 3.8rem);
+  }
+  .hero-lead {
+    max-width: 56ch;
+    font-size: clamp(1.02rem, 0.95rem + 0.35vw, 1.2rem);
+    color: var(--text-2);
+  }
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-start: 2rem;
+  }
+  .hero-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(4, auto);
+    gap: 1.5rem clamp(1.25rem, 0.5rem + 2vw, 2.5rem);
+    margin-block-start: clamp(2.25rem, 1.5rem + 2vw, 3.25rem);
+    padding-block-start: 1.75rem;
+    border-block-start: 1px solid var(--line);
+  }
+  .hero-stats > div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.35rem;
+  }
+  .hero-stats dd {
+    font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .hero-stats dd span {
+    color: var(--accent);
+  }
+  .hero-stats dt {
+    max-width: 14ch;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--text-3);
+  }
+
+  /* ---------- 发动机展台 ---------- */
+  .hero-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .stage-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+  .stage-model {
+    font-family: var(--font-mono);
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .stage-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    margin-block-start: 0.2rem;
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  .stage-link {
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+  .stage-visual {
+    position: relative;
+    aspect-ratio: 1;
+    width: 100%;
+    max-width: 540px;
+    margin-inline: auto;
+  }
+  .stage-gauge {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .g-inner {
+    fill: none;
+    stroke: rgb(255 255 255 / 0.06);
+    stroke-width: 1;
+    stroke-dasharray: 2 6;
+  }
+  .g-inner--2 {
+    stroke-dasharray: none;
+    stroke: rgb(255 255 255 / 0.04);
+  }
+  .g-track {
+    fill: none;
+    stroke: rgb(255 255 255 / 0.1);
+    stroke-width: 2;
+    stroke-dasharray: 270 90;
+  }
+  .g-range {
+    fill: none;
+    stroke: url(#gauge-grad);
+    stroke-width: 5;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 8px rgb(255 75 58 / 0.75));
+    transition:
+      stroke-dasharray 0.9s var(--ease),
+      stroke-dashoffset 0.9s var(--ease);
+  }
+  .g-ticks line {
+    stroke: rgb(255 255 255 / 0.22);
+    stroke-width: 1.5;
+  }
+  .g-ticks line.major {
+    stroke: rgb(255 255 255 / 0.55);
+    stroke-width: 2;
+  }
+  .g-labels text {
+    fill: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .g-marker {
+    transform-origin: 300px 300px;
+    transition: transform 0.9s var(--ease);
+  }
+  .g-marker-halo {
+    fill: rgb(255 75 58 / 0.25);
+  }
+  .g-marker-dot {
+    fill: #fff;
+    filter: drop-shadow(0 0 6px rgb(255 90 60 / 0.9));
+  }
+  .stage-engines {
+    position: absolute;
+    inset: 17%;
+    display: grid;
+    place-items: center;
+  }
+  .stage-engine {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.65)) drop-shadow(0 0 1px rgb(255 255 255 / 0.2));
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+    transition:
+      opacity 0.6s var(--ease),
+      transform 0.9s var(--ease);
+  }
+  .stage-engine.is-active {
+    opacity: 1;
+    transform: none;
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+  .stage-rpm {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 4%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    text-align: center;
+  }
+  .stage-rpm-label {
+    font-family: var(--font-label);
+    font-size: 0.66rem;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .stage-rpm-value {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .stage-rpm-value small {
+    font-size: 0.7rem;
+    color: var(--text-3);
+  }
+  .stage-readout {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    background: var(--line);
+  }
+  .stage-readout > div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    padding: 0.85rem 1rem;
+    background: rgb(17 19 23 / 0.85);
+  }
+  .stage-readout dt {
+    font-size: 0.72rem;
+    line-height: 1.3;
+    color: var(--text-3);
+  }
+  .stage-readout dd {
+    font-size: clamp(1.15rem, 0.95rem + 0.7vw, 1.55rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .stage-readout small {
+    font-size: 0.6em;
+    font-weight: 700;
+    color: var(--text-3);
+  }
+
+  .stage-tabs {
+    display: none;
+    gap: 0.35rem;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 0.15rem;
+  }
+  :global(.js) .stage-tabs {
+    display: flex;
+  }
+  .stage-tab {
+    position: relative;
+    flex: 1 0 auto;
+    min-width: 58px;
+    height: 42px;
+    padding: 0 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.02);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-2);
+    transition:
+      border-color 0.25s,
+      background-color 0.25s,
+      color 0.25s;
+  }
+  .stage-tab:hover {
+    border-color: var(--line-3);
+    color: var(--text);
+  }
+  .stage-tab[aria-pressed='true'] {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+  /* 自动轮播时，当前按钮底部有一条进度线 */
+  .stage-tab-progress {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--grad-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  :global([dir='rtl']) .stage-tab-progress {
+    transform-origin: right;
+  }
+  .hero-stage:global(.is-cycling) .stage-tab[aria-pressed='true'] .stage-tab-progress {
+    animation: tab-progress 5.5s linear forwards;
+  }
+  .hero-stage:global(.is-cycling):hover .stage-tab-progress,
+  .hero-stage:global(.is-cycling):focus-within .stage-tab-progress {
+    animation-play-state: paused;
+  }
+  @keyframes tab-progress {
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  .hero-inner > * {
+    min-width: 0; /* 防止内容（如型号按钮条）把网格列撑得比屏幕还宽 */
+  }
+  @media (max-width: 1080px) {
+    .hero-inner {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .hero-stage {
+      max-width: 620px;
+      width: 100%;
+      margin-inline: auto;
+    }
+  }
+  @media (max-width: 640px) {
+    .hero-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .stage-readout {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .g-labels text {
+      font-size: 20px;
+    }
+  }
+
+  /* ---------- 3. 产品线 ---------- */
+  .head-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  .head-row-cta {
+    flex: none;
+    margin-block-end: clamp(2.5rem, 2rem + 2vw, 4rem);
+  }
+  @media (max-width: 760px) {
+    .head-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+    }
+    .head-row-cta {
+      order: 2;
+      margin-block: 1.5rem 0;
+    }
+  }
+
+  /* ---------- 4. 性能对比图 ---------- */
+  .lc {
+    --label-w: clamp(92px, 7rem + 2vw, 150px);
+    padding: clamp(1.25rem, 0.8rem + 2vw, 2.25rem);
+  }
+  .lc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-block-end: 2rem;
+  }
+  .seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-pill);
+    background: rgb(0 0 0 / 0.25);
+  }
+  .seg button {
+    min-height: 38px;
+    padding: 0 1rem;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--text-2);
+    transition:
+      background-color 0.25s,
+      color 0.25s;
+  }
+  .seg button:hover {
+    color: var(--text);
+  }
+  .seg button[aria-pressed='true'] {
+    background: var(--surface-3);
+    color: var(--text);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+  .lc-legend {
+    display: flex;
+    flex-wrap: wrap;
     gap: 1.25rem;
+    font-size: 0.82rem;
+    color: var(--text-2);
   }
-  .strength {
-    padding: 1.1rem;
-    background: #fafafa;
+  .lc-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sw {
+    display: inline-block;
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+  }
+  .sw--a {
+    background: var(--chart-1);
+  }
+  .sw--b {
+    background: var(--chart-2);
+  }
+
+  .lc-plot {
+    position: relative;
+    padding-block-end: 2rem; /* 给底部刻度留位置 */
+  }
+  .lc-axes {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--label-w);
+    inset-inline-end: 4.5rem;
+    pointer-events: none;
+  }
+  .lc-axis {
+    position: absolute;
+    inset: 0;
+  }
+  .lc-axis span {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--x) * 100%);
+    width: 1px;
+    background: var(--chart-grid);
+  }
+  .lc-axis i {
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: 0;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-style: normal;
+    color: var(--text-3);
+  }
+  :global([dir='rtl']) .lc-axis i {
+    transform: translateX(50%);
+  }
+  .lc-axis-unit {
+    position: absolute;
+    bottom: 0;
+    inset-inline-end: -3.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-3);
+  }
+  .lc-rows {
+    position: relative;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .lc-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--label-w) 1fr;
+    align-items: center;
+    min-height: 48px;
     border-radius: 10px;
+    transition: background-color 0.2s;
   }
-  .strength h3 {
-    margin-block: 0 0.4rem;
+  .lc-row:hover,
+  .lc-row:focus-within {
+    background: rgb(255 255 255 / 0.03);
+  }
+  .lc-label {
+    padding-inline: 0.5rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .lc-label:hover {
+    color: var(--accent-text);
+  }
+  .lc-track {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px; /* 两根条之间 2px 表面色间隙 */
+    margin-inline-end: 4.5rem;
+  }
+  .lc-bar {
+    display: block;
+    height: 12px;
+    border-start-end-radius: 4px;
+    border-end-end-radius: 4px;
+    transition:
+      width 0.8s var(--ease),
+      opacity 0.4s;
+  }
+  .lc-bar--a {
+    width: calc(var(--v) * 100%);
+    background: var(--chart-1);
+  }
+  .lc-bar--b {
+    width: calc(var(--v2) * 100%);
+    background: var(--chart-2);
+  }
+  .lc[data-metric='thrust'] .lc-row {
+    --v: var(--thrust-a);
+    --v2: var(--thrust-b);
+  }
+  .lc[data-metric='power'] .lc-row {
+    --v: var(--power);
+    --v2: 0;
+  }
+  .lc[data-metric='mtow'] .lc-row {
+    --v: var(--mtow);
+    --v2: 0;
+  }
+  .lc:not([data-metric='thrust']) .lc-bar--b {
+    opacity: 0;
+    height: 0;
+  }
+  .lc:not([data-metric='thrust']) .lc-bar--a {
+    height: 16px;
+  }
+  .lc-val {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: calc(var(--v) * 100% + 0.6rem);
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    transition: inset-inline-start 0.8s var(--ease);
+  }
+  .lc-na {
+    font-weight: 500;
+    color: var(--text-3);
+  }
+  /* 指标切换：只显示当前指标对应的文字 / 刻度 / 图例 */
+  .lc [data-for] {
+    display: none;
+  }
+  .lc[data-metric='thrust'] [data-for='thrust'],
+  .lc[data-metric='power'] [data-for='power'],
+  .lc[data-metric='mtow'] [data-for='mtow'] {
+    display: revert;
+  }
+  .lc[data-metric='thrust'] .lc-legend[data-for='thrust'],
+  .lc[data-metric='thrust'] .lc-tip [data-for='thrust'],
+  .lc[data-metric='power'] .lc-tip [data-for='power'],
+  .lc[data-metric='mtow'] .lc-tip [data-for='mtow'] {
+    display: flex;
+  }
+  .lc-tip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    inset-inline-start: clamp(0px, calc(var(--v) * 100% - 120px), calc(100% - 240px));
+    z-index: 3;
+    display: grid;
+    gap: 0.3rem;
+    min-width: 220px;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    background: rgb(20 22 27 / 0.97);
+    box-shadow: var(--shadow-lg);
+    font-size: 0.78rem;
+    color: var(--text-2);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition:
+      opacity 0.2s,
+      transform 0.2s,
+      visibility 0.2s;
+    pointer-events: none;
+  }
+  .lc-tip strong {
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+  .lc-tip span {
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .lc-tip b {
+    margin-inline-start: auto;
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+  .lc-tip .sw {
+    width: 12px;
+    height: 3px;
+  }
+  .lc-row:hover .lc-tip,
+  .lc-row:focus-within .lc-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .lc-table {
+    margin-block-start: 1.75rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--line);
+  }
+  .lc-table summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+  .lc-table summary:hover {
+    color: var(--text);
+  }
+  .table-scroll {
+    overflow-x: auto;
+    margin-block-start: 1rem;
+  }
+  .lc-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .lc-table th,
+  .lc-table td {
+    padding: 0.6rem 0.75rem;
+    border-block-end: 1px solid var(--line);
+    text-align: start;
+    white-space: nowrap;
+  }
+  .lc-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-3);
+  }
+  .lc-table tbody th {
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+  .lc-table td {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  @media (max-width: 640px) {
+    .lc {
+      --label-w: 88px;
+    }
+    .lc-label {
+      font-size: 0.72rem;
+      padding-inline-end: 0.5rem;
+    }
+    .lc-track,
+    .lc-axes {
+      margin-inline-end: 3.75rem;
+    }
+    .lc-axes {
+      inset-inline-end: 3.75rem;
+    }
+    .lc-tip {
+      display: none !important;
+    }
+  }
+
+  /* ---------- 5 / 7. 特性卡片网格 ---------- */
+  .feature-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .feature-grid--4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (max-width: 1080px) {
+    .feature-grid--3,
+    .feature-grid--4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .feature-grid--3,
+    .feature-grid--4 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---------- 6. 关于我们 ---------- */
+  .about {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(2.5rem, 1rem + 5vw, 6rem);
+  }
+  .about-text {
+    max-width: 58ch;
+    margin-block-start: 1.4rem;
     font-size: 1.05rem;
   }
-  .strength p {
+  .timeline {
+    position: relative;
+    display: grid;
+    gap: 1.4rem;
+    margin-block-start: 2.5rem;
+    padding-inline-start: 1.75rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 5px;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 1px;
+    background: linear-gradient(var(--accent), var(--line-2));
+  }
+  .timeline li {
+    position: relative;
+  }
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(-1.75rem + 1px);
+    top: 0.45rem;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--bg-alt);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .timeline strong {
+    font-family: var(--font-label);
+    font-size: 0.85rem;
+    letter-spacing: var(--tracking-label);
+    color: var(--text);
+  }
+  .timeline p {
+    margin-block-start: 0.25rem;
+    font-size: 0.95rem;
+  }
+  .about-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .stat-card {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    min-height: 180px;
+    padding: clamp(1.25rem, 1rem + 1vw, 1.9rem);
+  }
+  .stat-card .stat-value {
+    font-size: clamp(2.4rem, 1.8rem + 2.2vw, 3.6rem);
+  }
+  .stat-card .stat-label {
     margin: 0;
-    color: #444;
+  }
+  .stat-card--accent {
+    border-color: var(--accent-line);
+    background:
+      radial-gradient(120% 120% at 100% 0%, rgb(255 70 40 / 0.18), transparent 60%),
+      var(--surface);
+  }
+  @media (max-width: 960px) {
+    .about {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 420px) {
+    .about-stats {
+      grid-template-columns: 1fr;
+    }
+    .stat-card {
+      min-height: 0;
+    }
   }
 
-  /* ===== 次要按钮（描边）===== */
-  .btn-outline {
-    background: transparent;
-    color: #b91c1c;
-    border: 1px solid #b91c1c;
+  /* ---------- 8. 下单流程 ---------- */
+  .process {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.25rem;
+    counter-reset: step;
   }
-  .btn-outline:hover {
-    background: #fef2f2;
+  .process::before {
+    content: '';
+    position: absolute;
+    inset-inline: 1.5rem;
+    top: 27px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-line), var(--line-2) 60%, transparent);
+  }
+  :global([dir='rtl']) .process::before {
+    background: linear-gradient(-90deg, var(--accent-line), var(--line-2) 60%, transparent);
+  }
+  .process-step {
+    position: relative;
+  }
+  .process-num {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-block-end: 1.25rem;
+    border: 1px solid var(--line-2);
+    border-radius: 50%;
+    background: var(--bg-alt);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text);
+    box-shadow: 0 0 0 6px var(--bg-alt);
+  }
+  .process-step:first-child .process-num {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: #fff;
+  }
+  .process-step h3 {
+    font-size: 1.05rem;
+  }
+  .process-step p {
+    margin-block-start: 0.5rem;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 960px) {
+    .process {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+    .process::before {
+      inset-inline: 27px auto;
+      top: 1rem;
+      bottom: 1rem;
+      width: 1px;
+      height: auto;
+      background: linear-gradient(var(--accent-line), var(--line-2));
+    }
+    .process-step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      column-gap: 1.25rem;
+    }
+    .process-num {
+      grid-row: span 2;
+      margin: 0;
+    }
   }
 
-  .home-cta {
-    text-align: start;
+  /* ---------- 9. 常见问题 ---------- */
+  .faq {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: clamp(2rem, 1rem + 4vw, 5rem);
+  }
+  .faq-aside {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+  }
+  .faq-list {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .faq-item {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    transition: border-color 0.3s;
+  }
+  .faq-item[open] {
+    border-color: var(--line-2);
+  }
+  .faq-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    list-style: none;
+    cursor: pointer;
+  }
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-item summary:hover {
+    color: #fff;
+  }
+  .faq-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    color: var(--accent);
+    transition: transform 0.35s var(--ease);
+  }
+  .faq-item[open] .faq-icon {
+    transform: rotate(45deg);
+  }
+  .faq-a {
+    padding: 0 1.35rem 1.25rem;
+  }
+  .faq-a p {
+    max-width: 68ch;
+  }
+  @media (max-width: 900px) {
+    .faq {
+      grid-template-columns: 1fr;
+    }
+    .faq-aside {
+      position: static;
+    }
   }
 </style>

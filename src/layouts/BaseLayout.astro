@@ -1,32 +1,50 @@
 ---
 // ============================================================
 // 页面骨架布局(BaseLayout)
-// 所有页面都会“套”在这个骨架里，统一拥有：SEO 头部、顶部导航、语言切换、页脚。
-// ★ RTL 关键：这里给 <html> 设置了 lang 和 dir，
-//   当语言是波斯语(fa)时 dir 会自动变成 "rtl"，整页从右到左镜像。
-// ★ SEO 关键：canonical / hreflang / Open Graph 需要“完整网址”，
-//   它们依赖 astro.config.mjs 里的 site 配置（域名）。
-//   域名还没定之前 site 为空，这些标签会自动省略；
-//   将来在 astro.config.mjs 填上 site 后，无需改这里，它们会自动全部生效。
+// 所有页面都会“套”在这个骨架里，统一拥有：SEO 头部、字体、页眉、页脚、悬浮 WhatsApp 按钮。
+// ★ RTL 关键：<html> 的 lang 和 dir 按语言自动设置，波斯语(fa) 时 dir="rtl"，整页镜像。
+// ★ SEO 关键：canonical / hreflang / Open Graph 分享卡片 / 结构化数据(JSON-LD)，
+//   都基于 astro.config.mjs 里的 site（正式域名 uavdroneengine.com）。
+// ★ 字体全部自托管（打包进网站），不连谷歌字体——俄罗斯、伊朗访问都稳定。
 // ============================================================
+import X from '@lucide/astro/icons/x';
+import Globe from '@lucide/astro/icons/globe';
 import { dir, locales, defaultLocale } from '../i18n/config';
-import { getLangFromUrl, useTranslations } from '../i18n/utils';
-import LanguageSwitcher from '../components/LanguageSwitcher.astro';
-import { CONTACT } from '../config/site';
+import { getLangFromUrl, useTranslations, ogLocale, localizedPath } from '../i18n/utils';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import BrandIcon from '../components/BrandIcon.astro';
+import { CONTACT, SALES } from '../config/site';
+
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/vazirmatn';
 import '../styles/global.css';
+// 当前语言首屏一定会用到的字体文件：提前加载，减少“字体闪一下”
+import manropeLatin from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
+import manropeCyrillic from '@fontsource-variable/manrope/files/manrope-cyrillic-wght-normal.woff2?url';
+import vazirArabic from '@fontsource-variable/vazirmatn/files/vazirmatn-arabic-wght-normal.woff2?url';
+
+interface Props {
+  /** 页面标题（不传 = 首页，显示“品牌名 — 标语”） */
+  title?: string;
+  /** 页面描述（搜索结果里那段灰字）；不传则用首页副标题 */
+  description?: string;
+  /** 分享卡片大图（public 下的路径，如 /og/yt-550.jpg） */
+  ogImage?: string;
+  /** 页面专属结构化数据（产品、面包屑等），会和全站的公司信息一起输出 */
+  jsonLd?: Record<string, unknown>[];
+  /** 隐藏右下角悬浮 WhatsApp 按钮（询价页本身已有大按钮） */
+  hideFloatingWhatsapp?: boolean;
+}
+const { title, description, ogImage = '/og/default.jpg', jsonLd = [], hideFloatingWhatsapp = false } = Astro.props;
 
 // 从网址识别当前语言，并准备好翻译函数 t
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-// 页面标题/描述：由具体页面通过 <BaseLayout title="..." description="..."> 传进来（都可不传）
-interface Props {
-  title?: string;
-  description?: string;
-}
-const { title, description } = Astro.props;
-
-// meta description：页面没传就用首页副标题兜底（真实产品文案，非占位）
+const siteName = t('site_name');
+const fullTitle = title ? `${title} · ${siteName}` : `${siteName} — ${t('site_tagline')}`;
 const metaDescription = description ?? t('home_hero_subtitle');
 
 // 当前路径去掉语言前缀后的“页面路径”，用来生成各语言版本的互链（hreflang）。
@@ -38,67 +56,136 @@ const pagePath = pathSegments.length ? pathSegments.join('/') + '/' : '';
 // site 已配置（域名已定）时才生成绝对网址；未配置时为 null，相关标签自动省略
 const siteOrigin = Astro.site ? Astro.site.origin : null;
 const canonicalUrl = siteOrigin ? `${siteOrigin}/${lang}/${pagePath}` : null;
+const ogImageUrl = siteOrigin ? `${siteOrigin}${ogImage}` : ogImage;
+
+const preloadFonts = lang === 'fa' ? [vazirArabic] : lang === 'ru' ? [manropeCyrillic, manropeLatin] : [manropeLatin];
+
+// 全站结构化数据：公司（Organization）+ 网站（WebSite），帮助 Google / Yandex 正确识别
+const structured = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: siteName,
+    url: siteOrigin ? `${siteOrigin}/` : undefined,
+    logo: siteOrigin ? `${siteOrigin}/icon-512.png` : undefined,
+    email: CONTACT.email,
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        telephone: '+' + CONTACT.phoneDigits,
+        email: CONTACT.email,
+      },
+      ...SALES.map((s) => ({
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        name: s.name,
+        telephone: '+' + s.phoneDigits,
+        email: s.email,
+      })),
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: siteName,
+    url: siteOrigin ? `${siteOrigin}/${lang}/` : undefined,
+    inLanguage: lang,
+  },
+  ...jsonLd,
+];
 ---
 <!doctype html>
 <html lang={lang} dir={dir(lang)}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title ? `${title} · ` : ''}{t('site_name')}</title>
+    <!-- 有 JS 时给 <html> 加 js 类：滚动渐显动画只在有 JS 时启用，没 JS 时内容直接显示 -->
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <title>{fullTitle}</title>
     <meta name="description" content={metaDescription} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#07080a" />
+    <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <meta name="theme-color" content="#b91c1c" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    {preloadFonts.map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
 
     {/* ===== 以下依赖域名（astro.config.mjs 的 site），未配置时自动省略 ===== */}
     {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
     {siteOrigin && (
       <>
-        {/* hreflang 互链：告诉 Google 各语言版本是“同一页面的不同语言”，避免被当成重复内容。
+        {/* hreflang 互链：告诉搜索引擎各语言版本是“同一页面的不同语言”，避免被当成重复内容。
             x-default 指向默认语言（俄语）版本。 */}
         {locales.map((loc) => (
           <link rel="alternate" hreflang={loc} href={`${siteOrigin}/${loc}/${pagePath}`} />
         ))}
         <link rel="alternate" hreflang="x-default" href={`${siteOrigin}/${defaultLocale}/${pagePath}`} />
-
-        {/* Open Graph：决定分享到 Telegram / WhatsApp 时的预览卡片 */}
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content={t('site_name')} />
-        <meta property="og:title" content={title ? `${title} · ${t('site_name')}` : t('site_name')} />
-        <meta property="og:description" content={metaDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:locale" content={lang} />
       </>
     )}
+
+    {/* Open Graph：决定分享到 WhatsApp / Telegram 时的预览卡片（大图 + 标题 + 描述） */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={metaDescription} />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    <meta property="og:locale" content={ogLocale[lang]} />
+    {locales.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={ogLocale[l]} />)}
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={fullTitle} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(structured).replace(/</g, '\\u003c')} />
   </head>
   <body>
     <!-- 跳到主内容：键盘/读屏用户按 Tab 的第一个焦点，可直接跳过页眉 -->
     <a class="skip-link" href="#main">{t('skip_to_content')}</a>
 
-    <header class="site-header">
-      <a class="brand" href={`/${lang}/`}>{t('site_name')}</a>
-      <!-- 主导航：aria-current 标记当前所在页面（配合 global.css 高亮） -->
-      <nav class="nav" aria-label={t('nav_main_label')}>
-        <a href={`/${lang}/`} aria-current={pagePath === '' ? 'page' : undefined}>{t('nav_home')}</a>
-        <a href={`/${lang}/products/`} aria-current={pagePath.startsWith('products') ? 'page' : undefined}>{t('nav_products')}</a>
-        <a href={`/${lang}/inquiry/`} aria-current={pagePath.startsWith('inquiry') ? 'page' : undefined}>{t('nav_inquiry')}</a>
-      </nav>
-      <LanguageSwitcher />
-    </header>
+    <Header />
 
-    <main class="site-main" id="main">
+    <main id="main">
       <slot />
     </main>
 
-    <footer class="site-footer">
-      <!-- 联系信息区（真实信息，客户 2026-08-08 提供）：全站页脚都显示，方便买家找到联系方式 -->
-      <div class="footer-contact">
-        <h3>{t('footer_contact_title')}</h3>
-        <p class="contact-line">WhatsApp: <a href={CONTACT.whatsappLink} rel="noopener">{CONTACT.phoneDisplay}</a></p>
-        <p class="contact-line">Telegram: <a href={CONTACT.telegramLink} rel="noopener">{CONTACT.phoneDisplay}</a></p>
-        <p class="contact-line">Email: <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p>
-      </div>
-      <p class="footer-copy">© {t('site_name')} — {t('site_tagline')} — {t('footer_rights')}</p>
-    </footer>
+    <Footer />
+
+    <!-- 语言建议：访客浏览器语言是本站支持的另一种语言时（如伊朗访客打开了俄语页），
+         右下角提示“本站有你的语言版本”。提示文字用目标语言自己写，访客一定看得懂；
+         关掉后记住选择（site.ts），不会反复弹出。 -->
+    <aside class="lang-suggest" data-lang-suggest hidden aria-label={t('language_label')}>
+      <Globe class="lang-suggest-icon" aria-hidden="true" />
+      {locales.filter((l) => l !== lang).map((l) => {
+        const tl = useTranslations(l);
+        return (
+          <div class="lang-suggest-body" data-suggest-for={l} lang={l} dir={dir(l)} hidden>
+            <p>{tl('lang_suggest_text')}</p>
+            <a href={localizedPath(Astro.url, l)} hreflang={l}>{tl('lang_suggest_cta')} <span class="dir-arrow" aria-hidden="true">→</span></a>
+          </div>
+        );
+      })}
+      <button type="button" class="lang-suggest-close" data-suggest-close aria-label={t('lang_suggest_close')}>
+        <X aria-hidden="true" />
+      </button>
+    </aside>
+
+    {!hideFloatingWhatsapp && (
+      <aside aria-label={t('float_whatsapp_label')}>
+        <a class="float-wa" href={CONTACT.whatsappLink} target="_blank" rel="noopener" aria-label={t('float_whatsapp_label')}>
+          <BrandIcon name="whatsapp" />
+        </a>
+      </aside>
+    )}
+
+    <script>
+      import '../scripts/site.ts';
+    </script>
   </body>
 </html>

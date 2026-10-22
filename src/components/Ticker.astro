@@ -1,0 +1,20 @@
+---
+// ============================================================
+// 滚动字幕条：8 条真实卖点无限循环滚动（鼠标悬停暂停）
+// 内容复制两份首尾相接，实现无缝循环；第二份对读屏软件隐藏，避免重复朗读。
+// ============================================================
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const t = useTranslations(getLangFromUrl(Astro.url));
+const items = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => t(`ticker_${n}`));
+---
+<div class="ticker">
+  <div class="ticker-track">
+    <ul class="ticker-list">
+      {items.map((text) => <li class="ticker-item">{text}</li>)}
+    </ul>
+    <ul class="ticker-list" aria-hidden="true">
+      {items.map((text) => <li class="ticker-item">{text}</li>)}
+    </ul>
+  </div>
+</div>
