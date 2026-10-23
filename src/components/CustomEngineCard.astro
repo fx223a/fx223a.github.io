@@ -1,0 +1,34 @@
+---
+// ============================================================
+// “需要其它排量？”卡片：放在产品网格最后（首页产品线 + 产品列表页）
+// 用户 2026-10-23 要求：不要把型号数量 / 排量范围写死——网站上没有的排量（更小或更大）也可以按需提供。
+// 点击按钮直接打开 WhatsApp，并预填“我需要其它排量的发动机，我的需求是：”。
+// 注意：这张卡片故意不用 .pcard 类名，产品页的筛选 / 排序 / “显示 N / 共 N 款”计数都不会把它算进去。
+// ============================================================
+import Plus from '@lucide/astro/icons/plus';
+import BrandIcon from './BrandIcon.astro';
+import { useTranslations } from '../i18n/utils';
+import { CONTACT } from '../config/site';
+
+interface Props {
+  lang: string;
+  /** 在网格里的序号，用于入场动画依次错开 */
+  i?: number;
+  /** 标题层级：与同一网格里的产品卡片保持一致 */
+  level?: 'h2' | 'h3';
+}
+const { lang, i = 0, level = 'h3' } = Astro.props;
+const t = useTranslations(lang);
+const Heading = level;
+const href = `https://wa.me/${CONTACT.phoneDigits}?text=${encodeURIComponent(t('wa_prefill_custom'))}`;
+---
+<article class="card custom-card" data-spotlight data-reveal data-grid-end style={`--i:${i % 3}`}>
+  <span class="custom-card-cc" aria-hidden="true">cc</span>
+  <span class="custom-card-icon" aria-hidden="true"><Plus /></span>
+  <Heading class="custom-card-title">{t('custom_engine_title')}</Heading>
+  <p class="custom-card-text">{t('custom_engine_text')}</p>
+  <a class="btn btn--ghost custom-card-cta" href={href} target="_blank" rel="noopener">
+    <BrandIcon name="whatsapp" />
+    {t('cta_chat_whatsapp')}
+  </a>
+</article>

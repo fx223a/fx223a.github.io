@@ -14,7 +14,7 @@ import { getLangFromUrl, useTranslations, ogLocale, localizedPath } from '../i18
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import BrandIcon from '../components/BrandIcon.astro';
-import { CONTACT, SALES } from '../config/site';
+import { COMPANY, CONTACT, SALES } from '../config/site';
 
 import '@fontsource-variable/manrope';
 import '@fontsource-variable/jetbrains-mono';
@@ -61,11 +61,14 @@ const ogImageUrl = siteOrigin ? `${siteOrigin}${ogImage}` : ogImage;
 const preloadFonts = lang === 'fa' ? [vazirArabic] : lang === 'ru' ? [manropeCyrillic, manropeLatin] : [manropeLatin];
 
 // 全站结构化数据：公司（Organization）+ 网站（WebSite），帮助 Google / Yandex 正确识别
+// 公司名用品牌 YT（远拓，2026-10-23 用户提供）；网站名仍是 UAV Drone Engine
 const structured = [
   {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: siteName,
+    name: `${COMPANY.brand} (${COMPANY.nameLatin})`,
+    alternateName: [COMPANY.nameZh, COMPANY.nameLatin, siteName],
+    brand: { '@type': 'Brand', name: COMPANY.brand },
     url: siteOrigin ? `${siteOrigin}/` : undefined,
     logo: siteOrigin ? `${siteOrigin}/icon-512.png` : undefined,
     email: CONTACT.email,

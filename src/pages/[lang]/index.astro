@@ -2,15 +2,16 @@
 // ============================================================
 // 首页（多语言）
 // 结构：
-//   1. 大图区：发动机“仪表盘”展台（转速表圆环高亮该型号真实转速范围 + 型号切换 + 参数数字动画）
+//   1. 大图区：公司品牌小标签（YT · 远拓）+ 发动机“仪表盘”展台（转速表圆环高亮该型号真实转速范围 + 型号切换 + 参数数字动画）
 //   2. 滚动卖点条
-//   3. 产品线（7 张产品卡片）
+//   3. 产品线（全部型号的产品卡片 + 最后一张“需要其它排量？”卡片）
 //   4. 全系性能对比图（静推力 / 功率 / 最大起飞重量，可切换；附表格视图）
-//   5. 为什么选择我们（6 项，全部来自真实参数）
-//   6. 关于我们（客户提供的真实简介 + 大数字 + 三条要点）
+//   5. 为什么选择 YT：① 工厂实力（月产量 1000+ 台、专业产线、CNC、零件供货、装配培训）② 产品优势（6 项，来自真实参数）
+//   6. 关于 YT（客户提供的真实简介 + 公司名片 + 大数字 + 三条要点）
 //   7. 服务与保障   8. 下单流程   9. 常见问题   10. 询价横幅
-// ★ 全部为真实内容：数字都来自客户提供的资料或 products.json，绝不编造。
-//   工厂/资质/应用/案例四个板块等客户资料齐了再加回（i18n 标题 key 都还在）。
+// ★ 全部为真实内容：数字都来自客户/用户提供的资料或 products.json，绝不编造。
+// ★ 2026-10-23 用户要求：不要突出“7 款”（用 multiple / diverse 这类说法），网站上没有的排量也能按需提供。
+//   资质/应用/案例三个板块等客户资料齐了再加回（i18n 标题 key 都还在）。
 // ============================================================
 import ArrowRight from '@lucide/astro/icons/arrow-right';
 import Gauge from '@lucide/astro/icons/gauge';
@@ -24,9 +25,14 @@ import Truck from '@lucide/astro/icons/truck';
 import Wrench from '@lucide/astro/icons/wrench';
 import Settings2 from '@lucide/astro/icons/settings-2';
 import Plus from '@lucide/astro/icons/plus';
+import Factory from '@lucide/astro/icons/factory';
+import Cog from '@lucide/astro/icons/cog';
+import Boxes from '@lucide/astro/icons/boxes';
+import GraduationCap from '@lucide/astro/icons/graduation-cap';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SectionHead from '../../components/SectionHead.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import CustomEngineCard from '../../components/CustomEngineCard.astro';
 import Ticker from '../../components/Ticker.astro';
 import CtaBand from '../../components/CtaBand.astro';
 import BrandIcon from '../../components/BrandIcon.astro';
@@ -34,7 +40,7 @@ import { locales } from '../../i18n/config';
 import { useTranslations, formatNumber, formatStat, localizeUnit, numberLocaleOf } from '../../i18n/utils';
 import { products, metrics, cutout, shortModel } from '../../lib/products';
 import { responsive } from '../../lib/image-size';
-import { CONTACT } from '../../config/site';
+import { COMPANY, CONTACT } from '../../config/site';
 
 export function getStaticPaths() {
   return locales.map((lang) => ({ params: { lang } }));
@@ -114,6 +120,14 @@ const axisUnit = { thrust: u('kg'), power: u('kW'), mtow: u('kg') };
 // ------------------------------------------------------------
 // 3) 其它板块的数据
 // ------------------------------------------------------------
+// 工厂实力（2026-10-23 用户提供）：大卡片是月产量，旁边四张小卡片
+const factory = [
+  { icon: Factory, title: 'factory_lines_title', text: 'factory_lines_text' },
+  { icon: Cog, title: 'factory_cnc_title', text: 'factory_cnc_text' },
+  { icon: Boxes, title: 'factory_parts_title', text: 'factory_parts_text' },
+  { icon: GraduationCap, title: 'factory_training_title', text: 'factory_training_text' },
+];
+// 产品优势（6 项，全部来自真实参数）
 const strengths = [
   { icon: Gauge, title: 'home_strength_range_title', text: 'home_strength_range_text' },
   { icon: Layers, title: 'home_strength_config_title', text: 'home_strength_config_text' },
@@ -129,7 +143,8 @@ const services = [
   { icon: Settings2, title: 'home_service_custom_title', text: 'home_service_custom_text' },
 ];
 const steps = [1, 2, 3, 4, 5];
-const faqs = [1, 2, 3, 4, 5, 6, 7, 8];
+// 常见问题的显示顺序（9 产能 / 10 其它排量 / 11 零件与装配培训 为 2026-10-23 新增，插在相关问题旁边）
+const faqs = [1, 2, 3, 9, 4, 10, 5, 6, 7, 8, 11];
 
 // 常见问题的结构化数据（问答都在页面上可见）
 const faqLd = {
@@ -171,7 +186,7 @@ const faqLd = {
             {t('cta_chat_whatsapp')}
           </a>
         </div>
-        <!-- 真实数字（客户 2026-08-08 提供）：十年经验 / 6 万台+ / 7 款 / 质保 12 个月 -->
+        {/* 真实数字（客户/用户提供）：十年经验 / 6 万台+ / 月产量 1000+ 台（2026-10-23，替换原来的“7 款”）/ 质保 12 个月 */}
         <dl class="hero-stats" data-reveal style="--i:4">
           <div>
             <dt>{t('hero_stat_years')}</dt>
@@ -182,8 +197,8 @@ const faqLd = {
             <dd>{formatStat(60000, lang)}<span>+</span></dd>
           </div>
           <div>
-            <dt>{t('hero_stat_models')}</dt>
-            <dd>{formatStat(products.length, lang)}</dd>
+            <dt>{t('hero_stat_capacity')}</dt>
+            <dd>{formatStat(COMPANY.monthlyOutput, lang)}<span>+</span></dd>
           </div>
           <div>
             <dt>{t('hero_stat_warranty')}</dt>
@@ -336,6 +351,7 @@ const faqLd = {
       </div>
       <div class="product-grid">
         {products.map((p, i) => <ProductCard product={p} lang={lang} i={i} />)}
+        <CustomEngineCard lang={lang} i={products.length} />
       </div>
     </div>
   </section>
@@ -435,18 +451,43 @@ const faqLd = {
   </section>
 
   <!-- ======================================================
-       5. 为什么选择我们（6 项，全部来自真实参数）
+       5. 为什么选择 YT
+          ① 工厂实力（2026-10-23 用户提供）：大卡片 = 月产量 1000+ 台；四张小卡片 = 专业产线 / CNC / 零件供货 / 装配培训
+          ② 产品优势（6 项，全部来自真实参数）
        ====================================================== -->
   <section class="section section--line" id="why" aria-labelledby="why-title">
     <div class="container">
       <SectionHead eyebrow={t('home_why_eyebrow')} title={t('home_why_title')} desc={t('home_why_desc')} id="why-title" />
+
+      <h3 class="why-group" data-reveal><span class="why-group-num" aria-hidden="true">01</span>{t('home_factory_title')}</h3>
+      <div class="factory">
+        <article class="card factory-lead" data-reveal>
+          <span class="factory-watermark" aria-hidden="true">{COMPANY.brand}</span>
+          <h4 class="factory-label">{t('factory_capacity_label')}</h4>
+          <p class="factory-num">{formatStat(COMPANY.monthlyOutput, lang)}<span>+</span></p>
+          <p class="factory-unit">{t('factory_capacity_unit')}</p>
+          <p class="factory-text">{t('factory_capacity_text')}</p>
+        </article>
+        {factory.map((f, i) => {
+          const Icon = f.icon;
+          return (
+            <article class="card feature factory-item" data-spotlight data-reveal style={`--i:${(i % 2) + 1}`}>
+              <span class="icon-tile"><Icon aria-hidden="true" /></span>
+              <h4>{t(f.title)}</h4>
+              <p>{t(f.text)}</p>
+            </article>
+          );
+        })}
+      </div>
+
+      <h3 class="why-group" data-reveal><span class="why-group-num" aria-hidden="true">02</span>{t('why_group_engines')}</h3>
       <div class="feature-grid feature-grid--3">
         {strengths.map((s, i) => {
           const Icon = s.icon;
           return (
             <article class="card feature" data-spotlight data-reveal style={`--i:${i % 3}`}>
               <span class="icon-tile"><Icon aria-hidden="true" /></span>
-              <h3>{t(s.title)}</h3>
+              <h4>{t(s.title)}</h4>
               <p>{t(s.text)}</p>
             </article>
           );
@@ -456,13 +497,22 @@ const faqLd = {
   </section>
 
   <!-- ======================================================
-       6. 关于我们（客户提供的真实简介；2026-10-23 按用户要求改为“十年无人机发动机”）
+       6. 关于 YT（客户提供的真实简介；2026-10-23 按用户要求改为“十年无人机发动机”，
+          同日加公司名片：YT · 远拓 · Yuantuo，让客户清楚知道是哪家公司）
        ====================================================== -->
   <section class="section section--alt section--line" id="about" aria-labelledby="about-title">
     <div class="container about">
       <div class="about-copy" data-reveal>
         <p class="eyebrow">{t('home_about_title')}</p>
         <h2 class="section-title text-steel" id="about-title">{t('home_about_heading')}</h2>
+        <!-- 公司名片（数据在 src/config/site.ts 的 COMPANY） -->
+        <div class="company-badge">
+          <span class="company-badge-mark" aria-hidden="true">{COMPANY.brand}</span>
+          <p>
+            <strong>{COMPANY.brand} <span lang="zh">{COMPANY.nameZh}</span></strong>
+            <span>{COMPANY.nameLatin} · {t('company_tagline')}</span>
+          </p>
+        </div>
         <p class="about-text">{t('home_about_text')}</p>
         <ol class="timeline">
           {[1, 2, 3].map((n) => (
@@ -483,12 +533,12 @@ const faqLd = {
           <dd class="stat-value"><span data-countup="60000" data-locale={lang}>{formatStat(60000, lang)}</span>+</dd>
         </div>
         <div class="card stat-card" data-reveal style="--i:2">
-          <dt class="stat-label">{t('about_stat_warranty')}</dt>
-          <dd class="stat-value"><span data-countup="12" data-locale={lang}>{formatStat(12, lang)}</span></dd>
+          <dt class="stat-label">{t('about_stat_capacity')}</dt>
+          <dd class="stat-value"><span data-countup={COMPANY.monthlyOutput} data-locale={lang}>{formatStat(COMPANY.monthlyOutput, lang)}</span>+</dd>
         </div>
         <div class="card stat-card" data-reveal style="--i:3">
-          <dt class="stat-label">{t('about_stat_models')}</dt>
-          <dd class="stat-value"><span data-countup={products.length} data-locale={lang}>{formatStat(products.length, lang)}</span></dd>
+          <dt class="stat-label">{t('about_stat_warranty')}</dt>
+          <dd class="stat-value"><span data-countup="12" data-locale={lang}>{formatStat(12, lang)}</span></dd>
         </div>
       </dl>
     </div>
@@ -845,6 +895,7 @@ const faqLd = {
   .hero-stats > div {
     display: flex;
     flex-direction: column-reverse;
+    justify-content: flex-end; /* 数字顶端对齐成一行（说明文字长短不一时，数字不再高低错落） */
     gap: 0.35rem;
   }
   .hero-stats dd {
@@ -1497,6 +1548,124 @@ const faqLd = {
     }
   }
 
+  /* ---------- 5. 为什么选择 YT：分组小标题（01 工厂实力 / 02 产品优势） ---------- */
+  .why-group {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-block-end: 1.25rem;
+    font-family: var(--font-label);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  :global(:lang(fa)) .why-group {
+    font-size: 0.95rem;
+  }
+  .why-group::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--line-2), transparent);
+  }
+  :global([dir='rtl']) .why-group::after {
+    background: linear-gradient(-90deg, var(--line-2), transparent);
+  }
+  .why-group-num {
+    font-family: var(--font-mono);
+    color: var(--accent-text);
+  }
+  .factory + .why-group {
+    margin-block-start: clamp(3rem, 2.4rem + 2vw, 4.5rem);
+  }
+
+  /* ---------- 5a. 工厂实力：左边大卡片（月产量）+ 右边 2×2 小卡片 ---------- */
+  .factory {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .factory-lead {
+    grid-row: span 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 380px;
+    padding: clamp(1.6rem, 1.2rem + 1.5vw, 2.5rem);
+    overflow: hidden;
+    border-color: var(--accent-line);
+    background:
+      radial-gradient(110% 80% at 100% 0%, rgb(255 70 40 / 0.24), transparent 60%),
+      radial-gradient(80% 60% at 0% 100%, rgb(255 140 60 / 0.07), transparent 60%),
+      var(--surface);
+  }
+  /* 背景里的大号镂空“YT”（公司品牌，纯装饰） */
+  .factory-watermark {
+    position: absolute;
+    inset-inline-end: -0.04em;
+    top: -0.1em;
+    font-size: clamp(8.5rem, 5rem + 9vw, 14rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.06em;
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(255 255 255 / 0.09);
+    pointer-events: none;
+    user-select: none;
+  }
+  .factory-label {
+    font-family: var(--font-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-text);
+  }
+  :global(:lang(fa)) .factory-label {
+    font-size: 0.9rem;
+  }
+  .factory-num {
+    margin-block-start: 0.9rem;
+    font-size: clamp(3.6rem, 2.4rem + 4.2vw, 6.4rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: var(--tracking-tight);
+    color: var(--text);
+  }
+  .factory-num span {
+    color: var(--accent);
+  }
+  .factory-unit {
+    margin-block-start: 0.65rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .factory-text {
+    max-width: 36ch;
+    margin-block-start: 1rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--line-2);
+    color: var(--text-2);
+  }
+  @media (max-width: 1080px) {
+    .factory {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .factory-lead {
+      grid-column: 1 / -1;
+      grid-row: auto;
+      min-height: 0;
+    }
+  }
+  @media (max-width: 600px) {
+    .factory {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   /* ---------- 5 / 7. 特性卡片网格 ---------- */
   .feature-grid--3 {
     grid-template-columns: repeat(3, 1fr);
@@ -1528,6 +1697,48 @@ const faqLd = {
     max-width: 58ch;
     margin-block-start: 1.4rem;
     font-size: 1.05rem;
+  }
+  /* 公司名片：YT 方块 + “YT 远拓” + “Yuantuo · 中国无人机发动机制造商” */
+  .company-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-block-start: 1.6rem;
+    padding-block: 0.7rem;
+    padding-inline: 0.7rem 1.25rem;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    background: rgb(255 255 255 / 0.025);
+  }
+  .company-badge-mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 52px;
+    height: 52px;
+    border: 1px solid var(--accent-line);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #20242b, #0c0e11);
+    box-shadow: 0 10px 28px -12px var(--accent-glow);
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .company-badge p {
+    display: grid;
+    gap: 0.15rem;
+    line-height: 1.35;
+  }
+  .company-badge strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .company-badge p > span {
+    font-size: 0.85rem;
+    color: var(--text-3);
   }
   .timeline {
     position: relative;

@@ -10,6 +10,7 @@ export default {
   // ===== 品牌 / 通用 =====
   site_name: 'UAV Drone Engine',                     // 公司/品牌名（客户 2026-08-08 确认，四语统一用拉丁写法）
   site_tagline: 'Two-stroke aircraft engines',       // 品牌标语（真实产品定位；可按 CONTENT-TODO A3 调整）
+  company_tagline: 'UAV engine manufacturer · China',  // 公司一句话定位（“关于 YT”名片、页脚公司名下方；YT = 远拓，2026-10-23 用户提供）
 
   // ===== 顶部导航栏 =====
   nav_main_label: 'Main navigation',                 // 主导航区的无障碍标签（页面上不可见，读屏软件用）
@@ -22,7 +23,7 @@ export default {
   nav_menu: 'Menu',                                  // 手机端菜单按钮（读屏用）
   nav_products_toggle: 'Show engine models',         // 产品下拉菜单的展开按钮（读屏用）
   nav_all_engines: 'All engines',                    // 下拉菜单：全部发动机
-  nav_all_engines_desc: 'Compare 7 models side by side', // 下拉菜单：全部发动机的说明
+  nav_all_engines_desc: 'Compare all models side by side', // 下拉菜单：全部发动机的说明
   nav_models_label: 'Engine models',                 // 手机菜单里的小标题
 
   // ===== 语言切换器 =====
@@ -41,15 +42,15 @@ export default {
   back_to_top: 'Back to top',
 
   // ===== 首页：顶部大区块(hero) =====
-  hero_eyebrow: 'Two-stroke UAV engines · 120–730 cc',   // 大标题上方的小标签
+  hero_eyebrow: 'YT · UAV engine manufacturer · China',  // 大标题上方的小标签（2026-10-23 起写公司品牌 YT = 远拓）
   hero_title_a: 'Two-stroke engines',                    // 大标题第一行
   hero_title_b: 'for UAVs and light aircraft',           // 大标题第二行（红色渐变）
-  home_hero_title: 'Two-stroke aircraft engines, 120cc–730cc', // 旧版大标题（保留作页面标题等用途）
+  home_hero_title: 'Two-stroke aircraft engines for UAVs', // 旧版大标题（保留作页面标题等用途）
   home_hero_subtitle: 'Twin- and four-cylinder, air- and water-cooled engines for UAVs and light aircraft — with matched propellers, static thrust and take-off-weight data.', // 首页副标题
   home_hero_cta: 'Browse engines',                   // 首页主按钮
   hero_stat_years: 'years of UAV engine manufacturing',  // 数字：10 年
   hero_stat_units: 'engines produced',               // 数字：60 000+
-  hero_stat_models: 'UAV engine models',             // 数字：7 款
+  hero_stat_capacity: 'engines per month',  // 数字：1,000+（月产量，用户 2026-10-23 提供；替换原来的“7 款”）
   hero_stat_warranty: 'months warranty',             // 数字：12 个月
   stage_label: 'Interactive engine showcase',        // 发动机展台（读屏用）
   stage_tabs_label: 'Choose a model',                // 型号切换按钮组（读屏用）
@@ -69,7 +70,7 @@ export default {
   short_rpm: 'Speed range',
 
   // ===== 首页：滚动字幕条（全部为真实卖点）=====
-  ticker_1: '120–730 cc lineup',
+  ticker_1: '1,000+ engines per month',  // 月产量（2026-10-23 用户提供），替换原来的“120–730cc 全系列”
   ticker_2: 'Twin & four-cylinder',
   ticker_3: 'Air & water cooling',
   ticker_4: 'Carburetor or EFI',
@@ -77,10 +78,12 @@ export default {
   ticker_6: '12-month warranty',
   ticker_7: 'Pusher & tractor mounting',
   ticker_8: 'Thrust data at 100 m & 1800 m',
+  ticker_9: 'Complete CNC equipment',
+  ticker_10: 'Parts supply & assembly training',
 
   // ===== 首页：产品线 =====
   home_lineup_eyebrow: 'Engine lineup',
-  home_lineup_title: 'Seven engines, 120 to 730 cc',
+  home_lineup_title: 'A diverse engine lineup',  // 不写具体款数（用户要求：7 款不多，写死了限制自己）
   home_lineup_desc: 'Twin- and four-cylinder two-stroke engines, air- or water-cooled. Full manufacturer specifications on every model page.',
   home_featured_title: 'Featured engines',           // 板块标题（旧版，保留）
   home_featured_subtitle: 'A selection from our lineup — full specifications on each model page.', // 板块副标题（旧版，保留）
@@ -89,7 +92,7 @@ export default {
   // ===== 首页：性能对比图 =====
   chart_eyebrow: 'Performance at a glance',
   chart_title: 'Compare the whole lineup',
-  chart_desc: 'Manufacturer data for all seven models. Choose a metric:',
+  chart_desc: 'Manufacturer data for every model in the lineup. Choose a metric:',
   chart_metric_label: 'Metric',
   chart_metric_thrust: 'Static thrust',
   chart_metric_power: 'Power',
@@ -101,11 +104,24 @@ export default {
   chart_show_table: 'Show as table',
 
   // ===== 首页：为什么选择我们（真实产品优势）=====
-  home_why_eyebrow: 'Why our engines',
-  home_why_title: 'Why choose our engines',          // 板块标题
-  home_why_desc: 'The data and options an integrator needs to choose an engine with confidence.',
-  home_strength_range_title: 'Full power range',                                   // 优势1标题
-  home_strength_range_text: 'A complete lineup from 120cc to 730cc, from light to heavy take-off weights.', // 优势1正文
+  home_why_eyebrow: 'Why YT',  // 优势板块小标签（写公司品牌 YT = 远拓）
+  home_why_title: 'Manufacturing strength behind every engine',  // 板块标题（2026-10-23 起先讲工厂实力，再讲产品优势）
+  home_why_desc: 'Ample capacity, professional production lines and complete CNC equipment — plus parts supply and assembly training for your team.',
+  // 工厂实力（2026-10-23 用户提供：月产量 1000 台以上、产线设备专业、CNC 设备齐全、可零件供货、装配培训）
+  factory_capacity_label: 'Production capacity',  // 大卡片：小标签
+  factory_capacity_unit: 'engines per month',  // 大卡片：数字 1,000+ 下面的单位
+  factory_capacity_text: 'Ample capacity for volume orders and steady long-term supply.',
+  factory_lines_title: 'Professional production lines',
+  factory_lines_text: 'Engines are built on production lines with specialized equipment.',
+  factory_cnc_title: 'Complete CNC equipment',
+  factory_cnc_text: 'A full range of CNC machines for precision machining of engine parts.',
+  factory_parts_title: 'Parts supply',
+  factory_parts_text: 'Engine parts and spare parts, supplied directly from our factory.',
+  factory_training_title: 'Assembly training',
+  factory_training_text: 'We train your technicians in engine assembly.',
+  why_group_engines: 'Engine advantages',  // 优势板块第二组的小标题（下面 6 项产品优势，全部来自真实参数）
+  home_strength_range_title: 'Wide power range',                                   // 优势1标题
+  home_strength_range_text: 'Multiple displacements for light to heavy take-off weights — other displacements available on request.',  // 优势1正文（不写死排量范围：其它排量可按需提供）
   home_strength_config_title: 'Multiple configurations',                           // 优势2标题
   home_strength_config_text: 'Twin- and four-cylinder, air- or water-cooled — matched to your airframe.', // 优势2正文
   home_strength_fuel_title: 'Carburetor or EFI',                                   // 优势3标题
@@ -118,20 +134,20 @@ export default {
   home_strength_prop_text: 'Recommended propeller sizes are listed for each model.',
 
   // ===== 首页：关于我们 =====
-  home_about_title: 'About us',                      // 关于我们（小标签）
+  home_about_title: 'About YT',  // 关于我们（小标签，写公司品牌）
   home_about_heading: 'A decade of UAV engine manufacturing', // 关于我们大标题
-  home_about_text: 'We have been manufacturing UAV engines in China for ten years, with extensive engine R&D and production experience. To date we have produced over 60,000 engines.', // 公司简介（客户 2026-08-08 提供；2026-10-23 按用户要求由“十年摩托车发动机”改为“十年无人机发动机”，删除“2024 年起供无人机”）
+  home_about_text: 'YT has been manufacturing UAV engines in China for ten years, building extensive engine R&D and production experience. More than 60,000 engines have been produced to date, and monthly output exceeds 1,000 units.',  // 公司简介（客户 2026-08-08 提供；2026-10-23 改为“十年无人机发动机”，同日加公司名 YT/远拓 和月产量 1000+ 台）
   about_stat_years: 'years of UAV engine R&D and production',
   about_stat_units: 'engines produced to date',
   about_stat_warranty: 'months warranty on complete engines',
-  about_stat_models: 'UAV engine models',
+  about_stat_capacity: 'engines produced per month',  // 数字：1,000+（月产量，替换原来的“7 款”）
   about_tl_1_title: 'UAV engines',
-  about_tl_1_text: 'Two-stroke engines from 120 to 730 cc — twin- and four-cylinder, air- and water-cooled.',
+  about_tl_1_text: 'Multiple two-stroke engine models — twin- and four-cylinder, air- and water-cooled; other displacements on request.',
   about_tl_2_title: 'R&D and manufacturing',
-  about_tl_2_text: 'Ten years of UAV engine development and manufacturing in China.',
+  about_tl_2_text: 'Ten years of UAV engine development and manufacturing in China, with professional production lines and complete CNC equipment.',
   about_tl_3_title: 'Service',
-  about_tl_3_text: '12-month warranty, technical support and customization for every engine we supply.',
-  home_factory_title: 'Manufacturing & capacity',   // 工厂与产能（板块暂未上线，等客户资料）
+  about_tl_3_text: '12-month warranty, technical support, customization, parts supply and assembly training.',
+  home_factory_title: 'Manufacturing & capacity',  // 工厂与产能（2026-10-23 起用作“为什么选择 YT”板块第一组的小标题）
   home_cert_title: 'Quality & certifications',       // 质量与资质（板块暂未上线）
   home_applications_title: 'Applications',           // 应用场景（板块暂未上线）
   home_cases_title: 'Customers & references',        // 客户案例（板块暂未上线）
@@ -182,6 +198,13 @@ export default {
   faq_7_a: 'Compare max take-off weight, static thrust at 100 m and 1800 m, and the recommended propellers on each model page — or tell us your airframe and target take-off weight and we will recommend a model.',
   faq_8_q: 'Do you provide technical support?',
   faq_8_a: 'Yes. We support installation and commissioning, help with troubleshooting and provide maintenance training.',
+  // 2026-10-23 新增：产能 / 其它排量 / 零件与装配培训（均为用户提供的信息）
+  faq_9_q: 'What is your production capacity?',
+  faq_9_a: 'We produce more than 1,000 engines per month on professional production lines with complete CNC equipment, so we can handle volume orders and long-term supply.',
+  faq_10_q: 'Can you supply a displacement that is not listed?',
+  faq_10_a: 'Yes. Besides the models on this website, other displacements are available on request. Tell us your airframe and target take-off weight, and we will find a suitable engine.',
+  faq_11_q: 'Do you supply spare parts and assembly training?',
+  faq_11_a: 'Yes. We supply engine parts and spare parts, and we train your technicians in engine assembly.',
 
   // ===== 询价 CTA 横幅（首页 / 产品页 / 详情页共用）=====
   cta_eyebrow: 'Get a quote',
@@ -192,7 +215,7 @@ export default {
   cta_scan: 'Scan to chat on WhatsApp',
 
   // ===== 页脚 =====
-  footer_about: 'Two-stroke aircraft engines from 120 to 730 cc for UAVs and light aircraft.',
+  footer_about: 'YT has been manufacturing UAV engines in China for ten years — two-stroke engines for UAVs and light aircraft.',
   footer_engines: 'Engines',
   footer_company: 'Company',
   footer_contact_title: 'Contact',                   // 页脚联系区标题
@@ -201,8 +224,8 @@ export default {
   // ===== 产品列表页 =====
   products_eyebrow: 'Product range',
   products_title: 'Our engines',                     // 产品列表页大标题
-  products_intro: 'Two-stroke aircraft engines from 120cc to 730cc, air- and water-cooled.', // 产品列表页副标题
-  products_stat_models: 'models',
+  products_intro: 'Two-stroke UAV engines in multiple displacements, air- and water-cooled. Other displacements are available on request.',  // 产品列表页副标题（也是该页搜索结果描述；不写死排量范围）
+  products_stat_capacity: 'engines / month',  // 产品页顶部数字：1,000+ 台/月（替换原来的“7 款型号”）
   products_stat_cc: 'displacement',
   products_stat_power: 'power',
   products_stat_thrust: 'static thrust',
@@ -228,6 +251,10 @@ export default {
   label_cylinders: 'cylinders',                      // 缸数单位词（如“2 cylinders”）
   product_image_alt: 'two-stroke aircraft engine',   // 产品图 alt：与型号名组合，如“YT-120CC — two-stroke aircraft engine”
   view_details: 'View details',                      // 列表卡片：查看详情
+  // 产品网格最后一张卡片：“需要其它排量？”（用户 2026-10-23：网站上没有的排量也能按需提供）
+  custom_engine_title: 'Need another displacement?',
+  custom_engine_text: 'Other displacements are available on request — tell us your airframe and target take-off weight.',
+  wa_prefill_custom: 'Hello! I am looking for an engine with a different displacement. My requirements:',  // 点这张卡片打开 WhatsApp 时预填的消息
 
   // ===== 产品详情页 =====
   // detail_intro 由参数自动拼出一句介绍（只用真实参数，不加任何主观宣传）

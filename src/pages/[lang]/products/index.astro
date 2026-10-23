@@ -2,13 +2,15 @@
 // ============================================================
 // 产品列表页（多语言）
 // 网址：/ru/products/、/en/products/、/zh/products/、/fa/products/
-// 内容：页面标题区（全系范围数字）→ 筛选/排序 + 产品卡片 → 全系参数对比表 → 询价横幅
+// 内容：页面标题区（月产量 + 全系范围数字）→ 筛选/排序 + 产品卡片（最后一张“需要其它排量？”）→ 全系参数对比表 → 询价横幅
 // 筛选/排序需要 JS；不开 JS 时直接显示全部型号（工具栏隐藏）。
 // ============================================================
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SectionHead from '../../../components/SectionHead.astro';
 import ProductCard from '../../../components/ProductCard.astro';
+import CustomEngineCard from '../../../components/CustomEngineCard.astro';
 import CtaBand from '../../../components/CtaBand.astro';
+import { COMPANY } from '../../../config/site';
 import { locales } from '../../../i18n/config';
 import { useTranslations, localizeSpecValue, formatNumber, formatStat, localizeUnit } from '../../../i18n/utils';
 import { products, cutout, specValue, lineupStats, type Product } from '../../../lib/products';
@@ -96,11 +98,11 @@ const jsonLd = [
           <h1 class="page-title text-steel" id="products-title">{t('products_title')}</h1>
           <p class="page-lead">{t('products_intro')}</p>
         </div>
-        <!-- 全系范围（由 products.json 自动计算） -->
+        {/* 月产量（用户 2026-10-23 提供，替换原来的“7 款型号”）+ 全系范围（由 products.json 自动计算） */}
         <dl class="range-stats">
           <div>
-            <dt>{t('products_stat_models')}</dt>
-            <dd>{formatStat(stats.count, lang)}</dd>
+            <dt>{t('products_stat_capacity')}</dt>
+            <dd>{formatStat(COMPANY.monthlyOutput, lang)}<span class="plus">+</span></dd>
           </div>
           <div>
             <dt>{t('products_stat_cc')}</dt>
@@ -148,6 +150,7 @@ const jsonLd = [
         {products.map((p, i) => (
           <ProductCard product={p} lang={lang} level="h2" eager={i < 3} i={i} />
         ))}
+        <CustomEngineCard lang={lang} level="h2" i={products.length} />
       </div>
     </div>
   </section>
@@ -228,6 +231,9 @@ const jsonLd = [
         .sort((a, b) => (Number(a.dataset[sort]) - Number(b.dataset[sort])) * dir)
         .forEach((c) => grid.appendChild(c));
       cards.filter((c) => c.hidden).forEach((c) => grid.appendChild(c));
+      // “需要其它排量？”卡片永远排在最后（它不参与筛选和计数）
+      const end = grid.querySelector('[data-grid-end]');
+      if (end) grid.appendChild(end);
       if (results) {
         results.textContent = (results.dataset.template ?? '')
           .replace('{n}', String(visible.length))
@@ -297,6 +303,9 @@ const jsonLd = [
   .range-stats small {
     font-size: 0.6em;
     color: var(--text-3);
+  }
+  .range-stats .plus {
+    color: var(--accent);
   }
   @media (max-width: 900px) {
     .ph-grid {

@@ -88,7 +88,7 @@ function background() {
     <rect x="0" y="${H - 6}" width="${W}" height="6" fill="url(#acc)"/>`;
 }
 
-// 左上角品牌（与网站 Logo 相同图形）
+// 左上角品牌（与网站 Logo 相同：螺旋桨图形 + 公司品牌 YT（远拓，2026-10-23 加）+ UAV DRONE / ENGINE）
 const brand = `
   <g transform="translate(64 58)">
     <rect x="0" y="0" width="52" height="52" rx="14" fill="#16191e" stroke="rgba(255,255,255,0.16)"/>
@@ -98,8 +98,10 @@ const brand = `
       <path transform="rotate(218 26 26)" d="M26 26C23.8 21.3 24 13.8 25.2 8.7c.4-1.4 2-1.5 2.3-.1 1.8 5.3 1.6 12.7-1.5 17.4Z"/>
     </g>
     <circle cx="26" cy="26" r="4" fill="#f4f5f7"/>
-    <text x="70" y="24" font-family="Manrope" font-weight="800" font-size="22" letter-spacing="1.5" fill="#f4f5f7">UAV DRONE</text>
-    <text x="71" y="45" font-family="Manrope" font-weight="600" font-size="12" letter-spacing="6" fill="#8a909a">ENGINE</text>
+    <text x="68" y="38" font-family="Manrope" font-weight="800" font-size="32" fill="url(#steel)">YT</text>
+    <rect x="118" y="9" width="1.5" height="34" fill="rgba(255,255,255,0.3)"/>
+    <text x="134" y="24" font-family="Manrope" font-weight="800" font-size="22" letter-spacing="1.5" fill="#f4f5f7">UAV DRONE</text>
+    <text x="135" y="45" font-family="Manrope" font-weight="600" font-size="12" letter-spacing="6" fill="#8a909a">ENGINE</text>
   </g>`;
 
 const footer = `<text x="64" y="${H - 44}" font-family="Manrope" font-weight="600" font-size="20" letter-spacing="1" fill="#8a909a">uavdroneengine.com</text>`;
@@ -147,28 +149,30 @@ for (const p of products) {
 }
 
 // ---- 首页 / 询价页 ----
+// 2026-10-23 用户要求：不突出型号数量（原“7 MODELS”），改为公司实力数字；月产量与 src/config/site.ts 的 COMPANY.monthlyOutput 一致
 const flagship = products.find((p) => p.id === 'yt-730') ?? products[products.length - 1];
 await render(
   'public/og/default.jpg',
   `
-    <text x="64" y="214" font-family="Manrope" font-weight="600" font-size="17" letter-spacing="3.5" fill="#ff7a6b">TWO-STROKE UAV ENGINES · 120–730 CC</text>
+    <text x="64" y="214" font-family="Manrope" font-weight="600" font-size="17" letter-spacing="3.5" fill="#ff7a6b">YT · UAV ENGINE MANUFACTURER · CHINA</text>
     <text x="60" y="306" font-family="Manrope" font-weight="800" font-size="68" letter-spacing="-2.5" fill="url(#steel)">Two-stroke engines</text>
     <text x="60" y="384" font-family="Manrope" font-weight="800" font-size="68" letter-spacing="-2.5" fill="url(#acc)">for UAVs</text>
     <g transform="translate(64 490)">
-      ${statBlock(0, '7', '', 'MODELS')}
-      ${statBlock(130, '60 000+', '', 'ENGINES PRODUCED')}
-      ${statBlock(400, '12', 'mo', 'WARRANTY')}
+      ${statBlock(0, '10', '', 'YEARS')}
+      ${statBlock(120, '60 000+', '', 'ENGINES PRODUCED')}
+      ${statBlock(370, '1 000+', '', 'ENGINES / MONTH')}
     </g>`,
   cutout(flagship),
   { left: 690, top: 90, size: 470 },
 );
 
 // ---- 产品列表页：三台发动机错落排列 ----
+// 2026-10-23：标题不再写“7 engine models / 120–730 cc”（用户要求不把型号数量和排量范围写死）
 const trio = ['yt-120', 'yt-350', 'yt-730'].map((id) => products.find((p) => p.id === id)).filter(Boolean);
 const listSvg = `
-    <text x="64" y="214" font-family="Manrope" font-weight="600" font-size="17" letter-spacing="3.5" fill="#ff7a6b">PRODUCT RANGE</text>
-    <text x="60" y="312" font-family="Manrope" font-weight="800" font-size="76" letter-spacing="-2.5" fill="url(#steel)">7 engine models</text>
-    <text x="60" y="396" font-family="Manrope" font-weight="800" font-size="76" letter-spacing="-2.5" fill="url(#acc)">120–730 cc</text>
+    <text x="64" y="214" font-family="Manrope" font-weight="600" font-size="17" letter-spacing="3.5" fill="#ff7a6b">YT · PRODUCT RANGE</text>
+    <text x="60" y="312" font-family="Manrope" font-weight="800" font-size="68" letter-spacing="-2.5" fill="url(#steel)">A diverse lineup</text>
+    <text x="60" y="390" font-family="Manrope" font-weight="800" font-size="68" letter-spacing="-2.5" fill="url(#acc)">of UAV engines</text>
     <g transform="translate(64 490)">
       ${statBlock(0, '8.25–47.3', 'kW', 'POWER')}
       ${statBlock(330, '26.5–75', 'kg', 'STATIC THRUST')}

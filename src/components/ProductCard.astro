@@ -7,7 +7,7 @@
 // ============================================================
 import ArrowRight from '@lucide/astro/icons/arrow-right';
 import { useTranslations, formatNumber, localizeUnit } from '../i18n/utils';
-import { products, metrics, cutout, indexLabel, type Product } from '../lib/products';
+import { metrics, cutout, indexLabel, type Product } from '../lib/products';
 import { responsive } from '../lib/image-size';
 
 interface Props {
@@ -69,7 +69,8 @@ const specs = [
       <Heading class="pcard-title">
         <a class="pcard-link" href={`/${lang}/products/${product.id}/`}>{product.model}</a>
       </Heading>
-      <span class="pcard-index" aria-hidden="true" dir="ltr">{indexLabel(product)} / {String(products.length).padStart(2, '0')}</span>
+      {/* 序号只显示 01、02…，不显示“/ 总数”（2026-10-23 用户要求不突出型号数量）。这种花括号注释不会出现在网页源代码里 */}
+      <span class="pcard-index" aria-hidden="true" dir="ltr">{indexLabel(product)}</span>
     </div>
     <dl class="pcard-specs">
       {specs.map((s) => (

@@ -1,6 +1,7 @@
 # engine-site — UAV Drone Engine 官网
 
-二冲程航空发动机（120–730cc，无人机/轻型飞行器用）的多语言展示网站，含询价（WhatsApp 优先），不接支付、不放价格。
+YT（远拓）无人机二冲程发动机的多语言展示网站（网站名 UAV Drone Engine），含询价（WhatsApp 优先），不接支付、不放价格。
+公司品牌、月产量在 `src/config/site.ts` 的 `COMPANY`；文案不写死型号数量（其它排量可按需提供）。
 目标市场：俄罗斯、乌克兰、伊朗（网站默认语言：英语，2026-10-23 起）。正式域名：https://uavdroneengine.com
 
 ## 技术栈

@@ -27,7 +27,7 @@ import { locales } from '../../../i18n/config';
 import { useTranslations, localizeSpecValue, localizeUnit, formatNumber, formatStat } from '../../../i18n/utils';
 import { products, metrics, cutout, groupedSpecs, lineupStats, specValue, type Product } from '../../../lib/products';
 import { responsive } from '../../../lib/image-size';
-import { CONTACT, SALES } from '../../../config/site';
+import { COMPANY, CONTACT, SALES } from '../../../config/site';
 
 // 为“每种语言 × 每个型号”各生成一个详情页，并把该型号数据通过 props 传进来。
 export function getStaticPaths() {
@@ -183,7 +183,8 @@ const jsonLd = [
     sku: product.model,
     description: intro,
     image: product.images.map((src) => `${site}${src}`),
-    brand: { '@type': 'Brand', name: t('site_name') },
+    brand: { '@type': 'Brand', name: COMPANY.brand },
+    manufacturer: { '@type': 'Organization', name: `${COMPANY.brand} (${COMPANY.nameLatin})` },
     category: t('product_image_alt'),
     url: `${site}/${lang}/products/${product.id}/`,
     additionalProperty: product.specs.map((s) => ({

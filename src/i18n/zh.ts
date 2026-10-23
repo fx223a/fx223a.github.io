@@ -10,6 +10,7 @@ export default {
   // ===== 品牌 / 通用 =====
   site_name: 'UAV Drone Engine',                     // 公司/品牌名（客户 2026-08-08 确认，四语统一用拉丁写法）
   site_tagline: '二冲程航空发动机',                    // 品牌标语（真实产品定位；可按 CONTENT-TODO A3 调整）
+  company_tagline: '中国无人机发动机制造商',  // 公司一句话定位（“关于 YT”名片、页脚公司名下方；YT = 远拓，2026-10-23 用户提供）
 
   // ===== 顶部导航栏 =====
   nav_main_label: '主导航',                           // 主导航区的无障碍标签（页面上不可见，读屏软件用）
@@ -22,7 +23,7 @@ export default {
   nav_menu: '菜单',                                  // 手机端菜单按钮（读屏用）
   nav_products_toggle: '展开发动机型号',               // 产品下拉菜单的展开按钮（读屏用）
   nav_all_engines: '全部发动机',                       // 下拉菜单：全部发动机
-  nav_all_engines_desc: '7 款型号参数对比',            // 下拉菜单：全部发动机的说明
+  nav_all_engines_desc: '全部型号参数对比',            // 下拉菜单：全部发动机的说明
   nav_models_label: '发动机型号',                      // 手机菜单里的小标题
 
   // ===== 语言切换器 =====
@@ -41,15 +42,15 @@ export default {
   back_to_top: '回到顶部',
 
   // ===== 首页：顶部大区块(hero) =====
-  hero_eyebrow: '无人机二冲程发动机 · 120–730cc',       // 大标题上方的小标签
+  hero_eyebrow: '远拓 YT · 中国无人机发动机制造商',  // 大标题上方的小标签（2026-10-23 起写公司品牌 YT = 远拓）
   hero_title_a: '二冲程航空发动机',                    // 大标题第一行
   hero_title_b: '专为无人机打造',                      // 大标题第二行（红色渐变；保持短句，避免中文在词中间断行）
-  home_hero_title: '二冲程航空发动机，120cc–730cc',   // 旧版大标题（保留）
+  home_hero_title: '无人机二冲程航空发动机',   // 旧版大标题（保留）
   home_hero_subtitle: '双缸/四缸、风冷/水冷发动机，适用于无人机与轻型飞行器——配套螺旋桨、静推力与最大起飞重量数据齐全。', // 首页副标题
   home_hero_cta: '浏览发动机',                        // 首页主按钮
   hero_stat_years: '年无人机发动机制造经验',                 // 数字：10 年
   hero_stat_units: '台累计产量',                      // 数字：60,000+
-  hero_stat_models: '款无人机发动机',                  // 数字：7 款
+  hero_stat_capacity: '台月产量',  // 数字：1,000+（月产量，用户 2026-10-23 提供；替换原来的“7 款”）
   hero_stat_warranty: '个月整机质保',                  // 数字：12 个月
   stage_label: '发动机互动展示',                       // 发动机展台（读屏用）
   stage_tabs_label: '选择型号',                       // 型号切换按钮组（读屏用）
@@ -69,7 +70,7 @@ export default {
   short_rpm: '转速范围',
 
   // ===== 首页：滚动字幕条（全部为真实卖点）=====
-  ticker_1: '120–730cc 全系列',
+  ticker_1: '月产量 1,000+ 台',  // 月产量（2026-10-23 用户提供），替换原来的“120–730cc 全系列”
   ticker_2: '双缸 / 四缸',
   ticker_3: '风冷 / 水冷',
   ticker_4: '化油器 / 电喷',
@@ -77,10 +78,12 @@ export default {
   ticker_6: '整机质保 12 个月',
   ticker_7: '推式 / 拉式安装',
   ticker_8: '100 米与 1800 米推力数据',
+  ticker_9: 'CNC 设备齐全',
+  ticker_10: '零件供货 · 装配培训',
 
   // ===== 首页：产品线 =====
   home_lineup_eyebrow: '产品线',
-  home_lineup_title: '七款发动机，120–730cc',
+  home_lineup_title: '丰富的发动机产品线',  // 不写具体款数（用户要求：7 款不多，写死了限制自己）
   home_lineup_desc: '双缸与四缸二冲程发动机，风冷或水冷可选。每款型号页面都有完整的厂家参数。',
   home_featured_title: '主力型号',                    // 板块标题（旧版，保留）
   home_featured_subtitle: '产品线中的部分型号——点击进入可查看完整参数。', // 板块副标题（旧版，保留）
@@ -89,7 +92,7 @@ export default {
   // ===== 首页：性能对比图 =====
   chart_eyebrow: '性能一览',
   chart_title: '全系列性能对比',
-  chart_desc: '七款型号的厂家数据。选择对比指标：',
+  chart_desc: '全系列各型号的厂家数据。选择对比指标：',
   chart_metric_label: '指标',
   chart_metric_thrust: '静推力',
   chart_metric_power: '功率',
@@ -101,11 +104,24 @@ export default {
   chart_show_table: '以表格查看',
 
   // ===== 首页：为什么选择我们（真实产品优势）=====
-  home_why_eyebrow: '我们的优势',
-  home_why_title: '为什么选择我们的发动机',            // 板块标题
-  home_why_desc: '集成商选型所需的数据与配置，一应俱全。',
-  home_strength_range_title: '全功率覆盖',                              // 优势1标题
-  home_strength_range_text: '从 120cc 到 730cc 完整型号线，覆盖从轻型到大起飞重量的需求。', // 优势1正文
+  home_why_eyebrow: '为什么选择远拓',  // 优势板块小标签（写公司品牌 YT = 远拓）
+  home_why_title: '每一台发动机，都有工厂实力做后盾',  // 板块标题（2026-10-23 起先讲工厂实力，再讲产品优势）
+  home_why_desc: '产能充沛、产线设备专业、CNC 设备齐全，还可提供零件供货与装配培训。',
+  // 工厂实力（2026-10-23 用户提供：月产量 1000 台以上、产线设备专业、CNC 设备齐全、可零件供货、装配培训）
+  factory_capacity_label: '产能',  // 大卡片：小标签
+  factory_capacity_unit: '台 / 月',  // 大卡片：数字 1,000+ 下面的单位
+  factory_capacity_text: '产能充沛，批量订单与长期稳定供货都有保障。',
+  factory_lines_title: '专业产线设备',
+  factory_lines_text: '发动机在专业产线上生产，配备专用生产设备。',
+  factory_cnc_title: 'CNC 设备齐全',
+  factory_cnc_text: '用于发动机零部件精密加工的各类 CNC 设备一应俱全。',
+  factory_parts_title: '零件供货',
+  factory_parts_text: '发动机零件与备件，由工厂直接供货。',
+  factory_training_title: '装配培训',
+  factory_training_text: '为您的技术人员提供发动机装配培训。',
+  why_group_engines: '产品优势',  // 优势板块第二组的小标题（下面 6 项产品优势，全部来自真实参数）
+  home_strength_range_title: '功率覆盖广',                              // 优势1标题
+  home_strength_range_text: '多种排量，覆盖从轻型到大起飞重量的需求；其它排量可按需提供。',  // 优势1正文（不写死排量范围：其它排量可按需提供）
   home_strength_config_title: '多种配置',                              // 优势2标题
   home_strength_config_text: '双缸/四缸、风冷/水冷可选——匹配你的机型。', // 优势2正文
   home_strength_fuel_title: '化油器或电喷',                            // 优势3标题
@@ -118,20 +134,20 @@ export default {
   home_strength_prop_text: '每款型号都给出推荐的螺旋桨规格。',
 
   // ===== 首页：关于我们 =====
-  home_about_title: '关于我们',                       // 关于我们（小标签）
+  home_about_title: '关于远拓',  // 关于我们（小标签，写公司品牌）
   home_about_heading: '十年无人机发动机制造经验',            // 关于我们大标题
-  home_about_text: '我们在中国从事无人机发动机制造已有十年，拥有多年发动机研发与制造经验。累计生产发动机超过 60,000 台。', // 公司简介（客户 2026-08-08 提供；2026-10-23 按用户要求由“十年摩托车发动机”改为“十年无人机发动机”，删除“2024 年起供无人机”）
+  home_about_text: '远拓（YT）在中国从事无人机发动机制造已有十年，拥有多年发动机研发与制造经验。累计生产发动机超过 60,000 台，月产量超过 1,000 台。',  // 公司简介（客户 2026-08-08 提供；2026-10-23 改为“十年无人机发动机”，同日加公司名 YT/远拓 和月产量 1000+ 台）
   about_stat_years: '年无人机发动机研发与制造',
   about_stat_units: '累计生产发动机（台）',
   about_stat_warranty: '个月整机质保',
-  about_stat_models: '款无人机发动机',
+  about_stat_capacity: '月产量（台）',  // 数字：1,000+（月产量，替换原来的“7 款”）
   about_tl_1_title: '无人机发动机',
-  about_tl_1_text: '120–730cc 二冲程发动机，双缸与四缸、风冷与水冷可选。',
+  about_tl_1_text: '多款二冲程发动机，双缸与四缸、风冷与水冷可选；其它排量可按需提供。',
   about_tl_2_title: '研发与制造',
-  about_tl_2_text: '在中国从事无人机发动机研发与制造十年。',
+  about_tl_2_text: '在中国从事无人机发动机研发与制造十年，产线设备专业，CNC 设备齐全。',
   about_tl_3_title: '服务',
-  about_tl_3_text: '整机质保 12 个月，每台发动机都提供技术支持与定制服务。',
-  home_factory_title: '工厂与产能',                   // 工厂与产能（板块暂未上线，等客户资料）
+  about_tl_3_text: '整机质保 12 个月，提供技术支持、定制服务、零件供货与装配培训。',
+  home_factory_title: '工厂与产能',  // 工厂与产能（2026-10-23 起用作“为什么选择 YT”板块第一组的小标题）
   home_cert_title: '质量与资质',                      // 质量与资质（板块暂未上线）
   home_applications_title: '应用场景',                // 应用场景（板块暂未上线）
   home_cases_title: '客户与案例',                     // 客户案例（板块暂未上线）
@@ -182,6 +198,13 @@ export default {
   faq_7_a: '在型号页面对比最大起飞重量、海拔 100 米与 1800 米静推力和推荐螺旋桨；或者告诉我们机型和目标起飞重量，由我们推荐型号。',
   faq_8_q: '提供技术支持吗？',
   faq_8_a: '提供。包括安装调试、故障排查和维护保养培训。',
+  // 2026-10-23 新增：产能 / 其它排量 / 零件与装配培训（均为用户提供的信息）
+  faq_9_q: '你们的产能有多大？',
+  faq_9_a: '月产量超过 1,000 台。发动机在专业产线上生产，CNC 设备齐全，批量订单与长期供货都有保障。',
+  faq_10_q: '可以提供网站上没有的排量吗？',
+  faq_10_a: '可以。除网站上的型号外，其它排量也可按需提供。告诉我们您的机型和目标起飞重量，我们为您寻找合适的发动机。',
+  faq_11_q: '提供零件和装配培训吗？',
+  faq_11_a: '提供。我们可供应发动机零件与备件，并为您的技术人员提供发动机装配培训。',
 
   // ===== 询价 CTA 横幅（首页 / 产品页 / 详情页共用）=====
   cta_eyebrow: '获取报价',
@@ -192,7 +215,7 @@ export default {
   cta_scan: '扫码通过 WhatsApp 咨询',
 
   // ===== 页脚 =====
-  footer_about: '120–730cc 二冲程航空发动机，适用于无人机与轻型飞行器。',
+  footer_about: '远拓（YT）在中国从事无人机发动机制造十年，为无人机与轻型飞行器提供二冲程发动机。',
   footer_engines: '发动机',
   footer_company: '公司',
   footer_contact_title: '联系方式',                   // 页脚联系区标题
@@ -201,8 +224,8 @@ export default {
   // ===== 产品列表页 =====
   products_eyebrow: '产品中心',
   products_title: '我们的发动机',                     // 产品列表页大标题
-  products_intro: '120cc 到 730cc 的二冲程航空发动机，风冷与水冷可选。', // 产品列表页副标题
-  products_stat_models: '款型号',
+  products_intro: '多种排量的无人机二冲程发动机，风冷与水冷可选；其它排量可按需提供。',  // 产品列表页副标题（也是该页搜索结果描述；不写死排量范围）
+  products_stat_capacity: '台月产量',  // 产品页顶部数字：1,000+ 台/月（替换原来的“7 款型号”）
   products_stat_cc: '排量',
   products_stat_power: '功率',
   products_stat_thrust: '静推力',
@@ -228,6 +251,10 @@ export default {
   label_cylinders: '缸',                             // 缸数单位词（如“2 缸”）
   product_image_alt: '二冲程航空发动机',              // 产品图 alt：与型号名组合，如“YT-120CC — 二冲程航空发动机”
   view_details: '查看详情',                          // 列表卡片：查看详情
+  // 产品网格最后一张卡片：“需要其它排量？”（用户 2026-10-23：网站上没有的排量也能按需提供）
+  custom_engine_title: '需要其它排量？',
+  custom_engine_text: '其它排量可按需提供——告诉我们您的机型和目标起飞重量。',
+  wa_prefill_custom: '您好！我需要其它排量的发动机，我的需求是：',  // 点这张卡片打开 WhatsApp 时预填的消息
 
   // ===== 产品详情页 =====
   detail_intro: '{model} 是一款{cyl}{cool}二冲程发动机，功率 {power}，海拔 100 米静推力 {thrust}。',

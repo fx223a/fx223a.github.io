@@ -1,7 +1,7 @@
 ---
 // ============================================================
-// 页脚：品牌简介 / 全部型号 / 站内导航 / 联系方式 + 语言 + 回到顶部
-// 联系方式是真实信息（客户 2026-08-08 提供），统一从 src/config/site.ts 读取。
+// 页脚：品牌简介（含公司名 YT · 远拓）/ 全部型号 / 站内导航 / 联系方式 + 语言 + 回到顶部
+// 公司名与联系方式都是真实信息（客户/用户提供），统一从 src/config/site.ts 读取。
 // ============================================================
 import Mail from '@lucide/astro/icons/mail';
 import ArrowUp from '@lucide/astro/icons/arrow-up';
@@ -10,7 +10,7 @@ import BrandIcon from './BrandIcon.astro';
 import { locales, localeNames } from '../i18n/config';
 import { getLangFromUrl, useTranslations, localizedPath } from '../i18n/utils';
 import { products } from '../lib/products';
-import { CONTACT, SALES } from '../config/site';
+import { COMPANY, CONTACT, SALES } from '../config/site';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -33,6 +33,11 @@ const links = [
         <a class="logo" href={home} aria-label={t('site_name')}>
           <Logo id="logo-footer" />
         </a>
+        <!-- 公司名（YT = 远拓，数据在 src/config/site.ts 的 COMPANY） -->
+        <p class="footer-company">
+          <strong>{COMPANY.brand} · <span lang="zh">{COMPANY.nameZh}</span> · {COMPANY.nameLatin}</strong>
+          <span>{t('company_tagline')}</span>
+        </p>
         <p>{t('footer_about')}</p>
       </div>
 
@@ -102,7 +107,7 @@ const links = [
     </div>
 
     <div class="footer-bottom">
-      <p>© {year} {t('site_name')} — {t('site_tagline')}. {t('footer_rights')}</p>
+      <p>© {year} <bdi>{COMPANY.brand} ({COMPANY.nameLatin}) · {t('site_name')}</bdi>. {t('footer_rights')}</p>
       <nav class="footer-langs" aria-label={t('language_label')}>
         {locales.map((loc) => (
           <a href={localizedPath(Astro.url, loc)} hreflang={loc} lang={loc} aria-current={loc === lang ? 'true' : undefined}>{localeNames[loc]}</a>
